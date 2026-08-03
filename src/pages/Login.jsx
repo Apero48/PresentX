@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { supabaseClient } from "@/api/supabaseClient";
+import { normalizeRole } from "@/services/authService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -21,7 +22,8 @@ export default function Login() {
         try {
             const user = await supabaseClient.auth.login(email, password);
             toast.success('Connexion réussie !');
-            if (user.role === 'admin') {
+            const role = normalizeRole(user);
+            if (role === 'admin') {
                 navigate('/Dashboard');
             } else {
                 navigate('/Scanner');
@@ -157,7 +159,7 @@ export default function Login() {
                 </motion.div>
             </div>
 
-            <style jsx>{`
+            <style>{`
         @keyframes blob {
           0%, 100% { transform: translate(0, 0) scale(1); }
           25% { transform: translate(20px, -50px) scale(1.1); }

@@ -56,17 +56,17 @@ TO authenticated
 USING (
   EXISTS (
     SELECT 1
-    FROM employees e
-    WHERE e.user_id = auth.uid()
-      AND e.email ILIKE '%admin%'
+    FROM auth.users
+    WHERE auth.users.id = auth.uid()
+      AND auth.users.email ILIKE '%admin%'
   )
 )
 WITH CHECK (
   EXISTS (
     SELECT 1
-    FROM employees e
-    WHERE e.user_id = auth.uid()
-      AND e.email ILIKE '%admin%'
+    FROM auth.users
+    WHERE auth.users.id = auth.uid()
+      AND auth.users.email ILIKE '%admin%'
   )
 );
 

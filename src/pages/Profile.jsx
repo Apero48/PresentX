@@ -171,107 +171,92 @@ export default function Profile() {
 
     if (!user) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-6">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-4 sm:p-6">
             <div className="max-w-3xl mx-auto space-y-6">
-                <h1 className="text-4xl font-bold text-gray-900 mb-8">Mon Profil</h1>
-
-                <Card className="border-0 shadow-2xl">
-                    <CardContent className="p-8">
-                        <div className="flex flex-col items-center text-center mb-8">
-                            <Avatar className="w-32 h-32 ring-4 ring-blue-100 mb-4">
-                                <AvatarImage src={employee?.profile_picture} />
-                                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-4xl font-bold">
-                                    {user.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                                </AvatarFallback>
-                            </Avatar>
-                            <h2 className="text-3xl font-bold text-gray-900 mb-2">{user.full_name}</h2>
-                            <div className="flex gap-2 mb-4">
-                                <Badge className="bg-blue-100 text-blue-800 text-base px-4 py-1">
-                                    {user.role === 'admin' ? 'Administrateur' : 'Employé'}
-                                </Badge>
-                                {employee?.is_active && (
-                                    <Badge className="bg-green-100 text-green-800 text-base px-4 py-1">
-                                        Actif
-                                    </Badge>
-                                )}
-                            </div>
+                <div className="rounded-3xl bg-white/95 border border-slate-200 p-6 shadow-xl">
+                    <div className="flex flex-col items-center text-center gap-4">
+                        <Avatar className="w-28 h-28 ring-4 ring-blue-100">
+                            <AvatarImage src={employee?.profile_picture} />
+                            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-4xl font-bold">
+                                {user.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <h2 className="text-3xl font-bold text-slate-900">{user.full_name}</h2>
+                            <p className="text-sm text-slate-500">{employee?.position || 'Employé'}</p>
                         </div>
+                        <div className="flex flex-wrap items-center justify-center gap-2">
+                            <Badge className="bg-blue-100 text-blue-800 text-base px-4 py-1">
+                                {user.role === 'admin' ? 'Administrateur' : 'Employé'}
+                            </Badge>
+                            {employee?.is_active && (
+                                <Badge className="bg-emerald-100 text-emerald-800 text-base px-4 py-1">
+                                    Actif
+                                </Badge>
+                            )}
+                        </div>
+                    </div>
+                </div>
 
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+                <div className="grid grid-cols-1 gap-4">
+                    <Card className="border-0 shadow-lg">
+                        <CardTitle className="px-6 pt-6 text-xl font-semibold text-slate-900">Informations</CardTitle>
+                        <CardContent className="space-y-4 px-6 pb-6">
+                            <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-3xl">
                                 <Mail className="w-5 h-5 text-blue-600" />
                                 <div>
-                                    <p className="text-xs text-gray-500">Email</p>
-                                    <p className="font-medium text-gray-900">{user.email}</p>
+                                    <p className="text-xs text-slate-500">Email</p>
+                                    <p className="font-medium text-slate-900">{user.email}</p>
                                 </div>
                             </div>
-
-                            {employee?.phone && (
-                                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                                    <Phone className="w-5 h-5 text-blue-600" />
-                                    <div>
-                                        <p className="text-xs text-gray-500">Téléphone</p>
-                                        <p className="font-medium text-gray-900">{employee.phone}</p>
-                                    </div>
-                                </div>
-                            )}
-
                             {employee?.department && (
-                                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+                                <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-3xl">
                                     <Briefcase className="w-5 h-5 text-blue-600" />
                                     <div>
-                                        <p className="text-xs text-gray-500">Département</p>
-                                        <p className="font-medium text-gray-900">{employee.department}</p>
+                                        <p className="text-xs text-slate-500">Département</p>
+                                        <p className="font-medium text-slate-900">{employee.department}</p>
                                     </div>
                                 </div>
                             )}
-
-                            {employee?.position && (
-                                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                                    <Shield className="w-5 h-5 text-blue-600" />
-                                    <div>
-                                        <p className="text-xs text-gray-500">Poste</p>
-                                        <p className="font-medium text-gray-900">{employee.position}</p>
-                                    </div>
-                                </div>
-                            )}
-
                             {employee?.start_time && (
-                                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+                                <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-3xl">
                                     <Clock className="w-5 h-5 text-blue-600" />
                                     <div>
-                                        <p className="text-xs text-gray-500">Heure de début</p>
-                                        <p className="font-medium text-gray-900">{employee.start_time}</p>
+                                        <p className="text-xs text-slate-500">Horaires</p>
+                                        <p className="font-medium text-slate-900">{employee.start_time} - {employee.end_time || '17:00'}</p>
                                     </div>
                                 </div>
                             )}
+                        </CardContent>
+                    </Card>
 
-                            {employee?.employee_code && (
-                                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                                    <Badge variant="outline" className="text-sm">
-                                        Code: {employee.employee_code}
-                                    </Badge>
-                                </div>
-                            )}
-                        </div>
-
-                        <Button
-                            onClick={handleLogout}
-                            variant="outline"
-                            className="w-full mt-8 py-6 text-red-600 border-red-200 hover:bg-red-50"
-                        >
-                            <LogOut className="w-5 h-5 mr-2" />
-                            Se déconnecter
-                        </Button>
-                    </CardContent>
-                </Card>
+                    <Card className="border-0 shadow-lg">
+                        <CardTitle className="px-6 pt-6 text-xl font-semibold text-slate-900">Actions</CardTitle>
+                        <CardContent className="space-y-4 px-6 pb-6">
+                            <Button
+                                onClick={handleLogout}
+                                variant="outline"
+                                className="w-full py-5 text-red-600 border-red-200 hover:bg-red-50"
+                            >
+                                <LogOut className="w-5 h-5 mr-2" />
+                                Déconnexion
+                            </Button>
+                            <Button
+                                onClick={() => toast('Fonctionnalité non disponible')}
+                                className="w-full py-5 bg-blue-600 text-white hover:bg-blue-700"
+                            >
+                                Modifier le mot de passe
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </div>
 
                 {user?.role === 'admin' && (
                     <Card className="border-0 shadow-2xl bg-gradient-to-br from-blue-50 to-purple-50">
@@ -282,17 +267,17 @@ export default function Profile() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-gray-600 mb-4">
+                            <p className="text-slate-600 mb-4">
                                 Générez le QR code universel que tous les employés utiliseront pour pointer leur présence.
                             </p>
                             <Button
                                 onClick={generateUniversalQR}
-                                className="w-full py-6 text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                                className="w-full py-5 text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                             >
                                 <QrCode className="w-5 h-5 mr-2" />
                                 Générer le QR Code Universel
                             </Button>
-                            <p className="text-xs text-gray-500 mt-3 text-center">
+                            <p className="text-xs text-slate-500 mt-3 text-center">
                                 À imprimer et coller dans l'entreprise
                             </p>
                         </CardContent>

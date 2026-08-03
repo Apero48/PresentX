@@ -39,17 +39,17 @@ CREATE POLICY "admins_manage_employees"
   USING (
     EXISTS (
       SELECT 1
-      FROM employees e
-      WHERE e.user_id = auth.uid()
-        AND e.email LIKE '%admin%'
+      FROM auth.users
+      WHERE auth.users.id = auth.uid()
+        AND auth.users.email LIKE '%admin%'
     )
   )
   WITH CHECK (
     EXISTS (
       SELECT 1
-      FROM employees e
-      WHERE e.user_id = auth.uid()
-        AND e.email LIKE '%admin%'
+      FROM auth.users
+      WHERE auth.users.id = auth.uid()
+        AND auth.users.email LIKE '%admin%'
     )
   );
 

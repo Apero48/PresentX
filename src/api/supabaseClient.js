@@ -7,6 +7,31 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'YOUR_SUPABASE
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
+const getRoleFromUser = (user, employee) => {
+    const email = (user?.email || employee?.email || '').toLowerCase()
+    if (email === 'admin@presencex.com' || email.includes('admin')) {
+        return 'admin'
+    }
+
+    const explicitRole = (
+        employee?.role ||
+        user?.role ||
+        user?.user_role ||
+        user?.user_metadata?.role ||
+        user?.app_metadata?.role
+    )?.toString().toLowerCase()
+
+    if (explicitRole === 'admin' || explicitRole === 'super_admin') {
+        return 'admin'
+    }
+
+    if (user?.is_admin === true || user?.isAdmin === true) {
+        return 'admin'
+    }
+
+    return 'employee'
+}
+
 class SupabaseClient {
     // Auth methods
     auth = {
@@ -23,23 +48,16 @@ class SupabaseClient {
                 .eq('user_id', user.id)
                 .single()
 
-            if (employee) {
-                return {
-                    id: user.id,
-                    email: user.email,
-                    full_name: employee.full_name,
-                    role: employee.role || 'employee',
-                    employee_id: employee.id,
-                    department: employee.department,
-                    position: employee.position
-                }
-            }
+            const role = getRoleFromUser(user, employee)
 
             return {
                 id: user.id,
                 email: user.email,
-                full_name: user.email?.split('@')[0],
-                role: 'employee'
+                full_name: employee?.full_name || user.email?.split('@')[0],
+                role,
+                employee_id: employee?.id,
+                department: employee?.department,
+                position: employee?.position
             }
         },
 
@@ -58,11 +76,13 @@ class SupabaseClient {
                 .eq('user_id', data.user.id)
                 .single()
 
+            const role = getRoleFromUser(data.user, employee)
+
             return {
                 id: data.user.id,
                 email: data.user.email,
                 full_name: employee?.full_name || data.user.email?.split('@')[0],
-                role: employee?.role || 'employee',
+                role,
                 employee_id: employee?.id,
                 department: employee?.department,
                 position: employee?.position

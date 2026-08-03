@@ -7,15 +7,24 @@
 ALTER TABLE employees DISABLE ROW LEVEL SECURITY;
 ALTER TABLE attendances DISABLE ROW LEVEL SECURITY;
 
--- Supprimer TOUTES les anciennes politiques
+-- Supprimer TOUTES les anciennes et nouvelles politiques si elles existent
 DROP POLICY IF EXISTS "Admin can do anything on employees" ON employees;
 DROP POLICY IF EXISTS "Employees can view their own profile" ON employees;
 DROP POLICY IF EXISTS "Employees can update their own profile" ON employees;
 DROP POLICY IF EXISTS "New users can create their profile" ON employees;
+DROP POLICY IF EXISTS "users_can_create_own_profile" ON employees;
+DROP POLICY IF EXISTS "anyone_can_read_employees" ON employees;
+DROP POLICY IF EXISTS "users_can_update_own_profile" ON employees;
+DROP POLICY IF EXISTS "admins_can_delete_employees" ON employees;
+
 DROP POLICY IF EXISTS "Admin can do anything on attendances" ON attendances;
 DROP POLICY IF EXISTS "Employees can view their own attendances" ON attendances;
 DROP POLICY IF EXISTS "Public can create attendances" ON attendances;
 DROP POLICY IF EXISTS "Public can update attendances" ON attendances;
+DROP POLICY IF EXISTS "anyone_can_read_attendances" ON attendances;
+DROP POLICY IF EXISTS "anyone_can_create_attendances" ON attendances;
+DROP POLICY IF EXISTS "anyone_can_update_attendances" ON attendances;
+DROP POLICY IF EXISTS "admins_can_delete_attendances" ON attendances;
 
 -- =====================================================
 -- NOUVELLES POLITIQUES - EMPLOYEES

@@ -50,7 +50,7 @@ export default function MyHistory() {
 
     if (!employee) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-6">
                 <div className="text-center">
                     <p className="text-gray-500">Chargement de vos données...</p>
                 </div>
@@ -59,111 +59,70 @@ export default function MyHistory() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-6">
-            <div className="max-w-5xl mx-auto space-y-6">
-                <div className="mb-8">
-                    <h1 className="text-4xl font-bold text-gray-900 mb-2">Mon Historique</h1>
-                    <p className="text-gray-500">Consultez votre historique de présence</p>
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-4 sm:p-6">
+            <div className="max-w-3xl mx-auto space-y-6">
+                <div className="rounded-3xl bg-white/90 border border-slate-200 p-6 shadow-xl">
+                    <p className="text-sm text-slate-500">Historique</p>
+                    <h1 className="mt-2 text-3xl font-bold text-slate-900">Mes pointages</h1>
+                    <p className="mt-2 text-sm text-slate-500">Récapitulatif de vos heures et de vos retards.</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <Card className="border-0 shadow-lg">
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-gray-500 mb-1">Ce mois-ci</p>
-                                    <p className="text-3xl font-bold text-gray-900">{currentMonth.length}</p>
-                                    <p className="text-xs text-gray-400">jours travaillés</p>
-                                </div>
-                                <Calendar className="w-8 h-8 text-blue-500" />
-                            </div>
+                        <CardContent className="p-5">
+                            <p className="text-sm text-slate-500">Ce mois-ci</p>
+                            <p className="mt-3 text-3xl font-bold text-slate-900">{currentMonth.length}</p>
+                            <p className="mt-2 text-xs text-slate-400">jours travaillés</p>
                         </CardContent>
                     </Card>
-
                     <Card className="border-0 shadow-lg">
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-gray-500 mb-1">Total Heures</p>
-                                    <p className="text-3xl font-bold text-gray-900">{totalHours.toFixed(1)}h</p>
-                                    <p className="text-xs text-gray-400">cumulées</p>
-                                </div>
-                                <Clock className="w-8 h-8 text-green-500" />
-                            </div>
+                        <CardContent className="p-5">
+                            <p className="text-sm text-slate-500">Heures</p>
+                            <p className="mt-3 text-3xl font-bold text-slate-900">{totalHours.toFixed(1)}h</p>
+                            <p className="mt-2 text-xs text-slate-400">cumulées</p>
                         </CardContent>
                     </Card>
-
                     <Card className="border-0 shadow-lg">
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-gray-500 mb-1">Retards</p>
-                                    <p className="text-3xl font-bold text-gray-900">{lateCount}</p>
-                                    <p className="text-xs text-gray-400">au total</p>
-                                </div>
-                                <TrendingUp className="w-8 h-8 text-orange-500" />
-                            </div>
+                        <CardContent className="p-5">
+                            <p className="text-sm text-slate-500">Retards</p>
+                            <p className="mt-3 text-3xl font-bold text-slate-900">{lateCount}</p>
+                            <p className="mt-2 text-xs text-slate-400">au total</p>
                         </CardContent>
                     </Card>
                 </div>
 
                 <Card className="border-0 shadow-2xl">
                     <CardHeader>
-                        <CardTitle>Historique Détaillé</CardTitle>
+                        <CardTitle>Mes derniers pointages</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <div className="space-y-3">
-                            {myAttendances.map((attendance) => {
-                                const statusInfo = getStatusBadge(attendance.status);
-                                return (
-                                    <div
-                                        key={attendance.id}
-                                        className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
-                                    >
-                                        <div className="flex items-center gap-4">
-                                            <div className="text-center">
-                                                <p className="text-2xl font-bold text-gray-900">
-                                                    {format(new Date(attendance.date), 'd')}
-                                                </p>
-                                                <p className="text-xs text-gray-500">
-                                                    {format(new Date(attendance.date), 'MMM', { locale: fr })}
-                                                </p>
-                                            </div>
-                                            <div>
-                                                <p className="font-medium text-gray-900">
-                                                    {format(new Date(attendance.date), 'EEEE', { locale: fr })}
-                                                </p>
-                                                <div className="flex items-center gap-2 text-sm text-gray-500">
-                                                    <Clock className="w-3 h-3" />
-                                                    <span>{attendance.check_in}</span>
-                                                    {attendance.check_out && (
-                                                        <>
-                                                            <span>→</span>
-                                                            <span>{attendance.check_out}</span>
-                                                        </>
-                                                    )}
-                                                </div>
+                    <CardContent className="space-y-4">
+                        {myAttendances.length > 0 ? myAttendances.map((attendance) => {
+                            const statusInfo = getStatusBadge(attendance.status);
+                            return (
+                                <div key={attendance.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div>
+                                            <p className="text-xs text-slate-500">{format(new Date(attendance.date), 'EEEE d MMMM', { locale: fr })}</p>
+                                            <div className="mt-2 flex items-center gap-2">
+                                                <span className="text-lg font-semibold text-slate-900">{attendance.check_in || '--:--'}</span>
+                                                <span className="text-slate-400">→</span>
+                                                <span className="text-lg font-semibold text-slate-900">{attendance.check_out || '--:--'}</span>
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <Badge className={`${statusInfo.className} border mb-2`}>
-                                                {statusInfo.label}
-                                            </Badge>
+                                            <div className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${statusInfo.className} border`}> {statusInfo.label} </div>
                                             {attendance.hours_worked && (
-                                                <p className="text-sm font-medium text-gray-600">
-                                                    {attendance.hours_worked.toFixed(1)}h
-                                                </p>
+                                                <p className="mt-2 text-sm font-medium text-slate-600">{attendance.hours_worked.toFixed(1)}h</p>
                                             )}
                                         </div>
                                     </div>
-                                );
-                            })}
-                            {myAttendances.length === 0 && (
-                                <div className="text-center py-12 text-gray-400">
-                                    Aucun enregistrement pour le moment
                                 </div>
-                            )}
-                        </div>
+                            );
+                        }) : (
+                            <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-400">
+                                Aucun enregistrement pour le moment.
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>

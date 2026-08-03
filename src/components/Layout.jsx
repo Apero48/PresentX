@@ -21,18 +21,17 @@ export default function Layout({ children, currentPageName }) {
     const isAdmin = normalizeRole(user) === 'admin';
 
     const adminPages = [
-        { name: 'Home', path: 'Dashboard', icon: Home },
+        { name: 'Dashboard', path: 'Dashboard', icon: Home },
         { name: 'Employés', path: 'Employees', icon: Users },
-        { name: 'Analytics', path: 'Reports', icon: BarChart3 },
-        { name: 'History', path: 'History', icon: History },
-        { name: 'Profile', path: 'Profile', icon: UserCircle }
+        { name: 'Pointages', path: 'History', icon: BarChart3 },
+        { name: 'Rapports', path: 'Reports', icon: BarChart3 },
+        { name: 'Paramètres', path: 'Profile', icon: UserCircle }
     ];
 
     const employeePages = [
-        { name: 'Home', path: 'Scanner', icon: Home },
-        { name: 'Scanner', path: 'Scanner', icon: QrCode },
-        { name: 'History', path: 'MyHistory', icon: History },
-        { name: 'Profile', path: 'Profile', icon: UserCircle }
+        { name: 'Accueil', path: 'Scanner', icon: Home },
+        { name: 'Historique', path: 'MyHistory', icon: History },
+        { name: 'Profil', path: 'Profile', icon: UserCircle }
     ];
 
     const pages = isAdmin ? adminPages : employeePages;
@@ -62,8 +61,12 @@ export default function Layout({ children, currentPageName }) {
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="flex justify-between items-center h-16">
                             <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-xl">
-                                    PX
+                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 shadow-lg overflow-hidden">
+                                    <img
+                                        src="/logo.png"
+                                        alt="PresenceX"
+                                        className="w-full h-full object-cover"
+                                    />
                                 </div>
                                 <div>
                                     <h1 className="text-lg font-bold text-gray-900">PresenceX</h1>

@@ -77,9 +77,9 @@ CREATE POLICY "Admin can do anything on employees"
   ON employees FOR ALL
   USING (
     EXISTS (
-      SELECT 1 FROM employees
-      WHERE user_id = auth.uid() 
-      AND email LIKE '%admin%'
+      SELECT 1 FROM auth.users
+      WHERE auth.users.id = auth.uid() 
+      AND auth.users.email LIKE '%admin%'
     )
   );
 
