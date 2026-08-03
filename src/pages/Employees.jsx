@@ -3,10 +3,11 @@ import { supabaseClient } from "@/api/supabaseClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Users2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
 import EmployeeCard from "../components/employees/EmployeeCard";
+import { StatePanel } from "@/components/ui/StatePanel";
 import {
     Dialog,
     DialogContent,
@@ -123,21 +124,36 @@ export default function Employees() {
                     />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {filteredEmployees.map(employee => (
-                        <Link key={employee.id} to={createPageUrl(`EmployeeDetails?id=${employee.id}`)}>
-                            <EmployeeCard
-                                employee={employee}
-                                onClick={() => { }}
-                            />
-                        </Link>
-                    ))}
-                </div>
-
-                {filteredEmployees.length === 0 && (
-                    <div className="text-center py-20">
-                        <p className="text-gray-400 text-lg">Aucun employé trouvé</p>
+                {isLoading ? (
+                    <StatePanel
+                        type="loading"
+                        title="Chargement des employés"
+                        description="Nous récupérons la liste des employés en cours..."
+                    />
+                ) : filteredEmployees.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {filteredEmployees.map(employee => (
+                            <Link key={employee.id} to={createPageUrl(`EmployeeDetails?id=${employee.id}`)}>
+                                <EmployeeCard
+                                    employee={employee}
+                                    onClick={() => { }}
+                                />
+                            </Link>
+                        ))}
                     </div>
+                ) : (
+                    <StatePanel
+                        type="empty"
+                        title="Aucun employé trouvé"
+                        description="Ajoutez un employé pour commencer à gérer les présences."
+                        icon={Users2}
+                        action={
+                            <Button onClick={() => setIsDialogOpen(true)} className="bg-gradient-to-r from-blue-600 to-purple-600">
+                                <Plus className="mr-2 h-4 w-4" />
+                                Ajouter un employé
+                            </Button>
+                        }
+                    />
                 )}
 
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

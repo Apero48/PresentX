@@ -1,16 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { supabaseClient } from "@/api/supabaseClient";
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
-import QRScanner from "../components/qr/QRScanner";
-import SuccessAnimation from "../components/notifications/SuccessAnimation";
-import ActionModal from "../components/scanner/ActionModal";
-import InterventionModal from "../components/scanner/InterventionModal";
-import EmployeeSelector from "../components/scanner/EmployeeSelector";
-import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
-import { format } from "date-fns";
+import React, { useState } from 'react';
+import { supabaseClient } from '@/api/supabaseClient';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { Card, CardContent } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
+import QRScanner from '../components/qr/QRScanner';
+import SuccessAnimation from '../components/notifications/SuccessAnimation';
+import ActionModal from '../components/scanner/ActionModal';
+import InterventionModal from '../components/scanner/InterventionModal';
+import EmployeeSelector from '../components/scanner/EmployeeSelector';
+import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
+import { format } from 'date-fns';
+import { createAttendance, updateAttendance, getTodayAttendanceForEmployee, calculateHoursWorked } from '@/services/attendanceService';
+import { callAttendanceEdgeFunction } from '@/services/attendanceEdgeFunctionService';
 
 export default function Scanner() {
     const [scanResult, setScanResult] = useState(null);
@@ -32,7 +34,7 @@ export default function Scanner() {
     });
 
     const createAttendanceMutation = useMutation({
-        mutationFn: (data) => supabaseClient.entities.Attendance.create(data),
+        mutationFn: (data) => createAttendance(data),
         onSuccess: () => {
             queryClient.invalidateQueries(['attendances']);
             queryClient.invalidateQueries(['todayAttendances']);
@@ -40,7 +42,7 @@ export default function Scanner() {
     });
 
     const updateAttendanceMutation = useMutation({
-        mutationFn: ({ id, data }) => supabaseClient.entities.Attendance.update(id, data),
+        mutationFn: ({ id, data }) => updateAttendance(id, data),
         onSuccess: () => {
             queryClient.invalidateQueries(['attendances']);
             queryClient.invalidateQueries(['todayAttendances']);
@@ -66,12 +68,9 @@ export default function Scanner() {
             const today = format(new Date(), 'yyyy-MM-dd');
             const currentTime = format(new Date(), 'HH:mm');
 
-            const todayAttendances = await supabaseClient.entities.Attendance.filter({
-                employee_id: employee.id,
-                date: today
-            });
+            const todayAttendance = await getTodayAttendanceForEmployee(employee.id);
 
-            if (todayAttendances.length === 0) {
+            if (!todayAttendance) {
                 // Premier scan = Arrivée
                 const startTime = employee.start_time || '08:00';
                 const [startHour, startMinute] = startTime.split(':').map(Number);
@@ -95,6 +94,18 @@ export default function Scanner() {
                     interventions: []
                 });
 
+                await callAttendanceEdgeFunction({
+                    action: 'create-attendance',
+                    payload: {
+                        employee_id: employee.id,
+                        employee_name: employee.full_name,
+                        date: today,
+                        check_in: currentTime,
+                        status: status,
+                        interventions: []
+                    }
+                });
+
                 setSuccessMessage(`✅ Bienvenue ${employee.full_name}!\nArrivée: ${currentTime}`);
                 setShowSuccess(true);
 
@@ -109,7 +120,7 @@ export default function Scanner() {
                 setTimeout(() => setShowSuccess(false), 3000);
             } else {
                 // Scan suivant - montrer le menu d'actions
-                setCurrentAttendance(todayAttendances[0]);
+                setCurrentAttendance(todayAttendance);
                 setShowActionModal(true);
             }
 
@@ -150,24 +161,14 @@ export default function Scanner() {
             setShowInterventionModal(true);
         } else if (actionKey === 'check_out') {
             const checkInTime = currentAttendance.check_in;
-            const [inHour, inMinute] = checkInTime.split(':').map(Number);
-            const [outHour, outMinute] = currentTime.split(':').map(Number);
-
-            let hoursWorked = (outHour * 60 + outMinute - inHour * 60 - inMinute) / 60;
-
-            if (currentAttendance.lunch_start && currentAttendance.lunch_end) {
-                const [lunchStartHour, lunchStartMinute] = currentAttendance.lunch_start.split(':').map(Number);
-                const [lunchEndHour, lunchEndMinute] = currentAttendance.lunch_end.split(':').map(Number);
-                const lunchDuration = (lunchEndHour * 60 + lunchEndMinute - lunchStartHour * 60 - lunchStartMinute) / 60;
-                hoursWorked -= lunchDuration;
-            }
+            const hoursWorked = calculateHoursWorked(checkInTime, currentTime, currentAttendance.lunch_start, currentAttendance.lunch_end);
 
             await updateAttendanceMutation.mutateAsync({
                 id: currentAttendance.id,
                 data: {
                     ...currentAttendance,
                     check_out: currentTime,
-                    hours_worked: Math.max(0, hoursWorked).toFixed(2)
+                    hours_worked: hoursWorked.toFixed(2)
                 }
             });
 

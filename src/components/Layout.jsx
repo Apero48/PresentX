@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { supabaseClient } from "@/api/supabaseClient";
+import { supabaseClient } from '@/api/supabaseClient';
 import {
     Home,
     Users,
@@ -11,24 +11,14 @@ import {
     UserCircle,
     LogOut
 } from 'lucide-react';
-import NotificationCenter from "@/components/notifications/NotificationCenter";
+import NotificationCenter from '@/components/notifications/NotificationCenter';
+import { useAuth } from '@/hooks/useAuth';
+import { normalizeRole } from '@/services/authService';
 
 export default function Layout({ children, currentPageName }) {
-    const [user, setUser] = useState(null);
+    const { user, loading } = useAuth();
 
-    useEffect(() => {
-        const fetchUser = async () => {
-            try {
-                const currentUser = await supabaseClient.auth.me();
-                setUser(currentUser);
-            } catch (error) {
-                supabaseClient.auth.redirectToLogin();
-            }
-        };
-        fetchUser();
-    }, []);
-
-    const isAdmin = user?.role === 'admin';
+    const isAdmin = normalizeRole(user) === 'admin';
 
     const adminPages = [
         { name: 'Home', path: 'Dashboard', icon: Home },
@@ -51,12 +41,17 @@ export default function Layout({ children, currentPageName }) {
         supabaseClient.auth.logout();
     };
 
-    if (!user) {
+    if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
             </div>
         );
+    }
+
+    if (!user) {
+        supabaseClient.auth.redirectToLogin();
+        return null;
     }
 
     return (

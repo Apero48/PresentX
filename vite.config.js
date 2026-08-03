@@ -9,8 +9,21 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    sourcemap: false,
+    chunkSizeWarningLimit: 1200,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-popover', '@radix-ui/react-select'],
+          charts: ['recharts']
+        }
+      }
+    }
+  },
   server: {
     port: 5173,
-    https: false, // Browser will handle camera permissions on localhost
+    https: false,
   },
 })

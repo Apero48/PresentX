@@ -1,16 +1,17 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { lazy } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
-import Dashboard from './pages/Dashboard';
-import Employees from './pages/Employees';
-import Scanner from './pages/Scanner'
-import Reports from './pages/Reports'
-import History from './pages/History'
-import MyHistory from './pages/MyHistory'
-import EmployeeDetails from './pages/EmployeeDetails'
-import Profile from './pages/Profile'
+
+const Login = lazy(() => import('./pages/Login'));
+const Signup = lazy(() => import('./pages/Signup'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Employees = lazy(() => import('./pages/Employees'));
+const Scanner = lazy(() => import('./pages/Scanner'));
+const Reports = lazy(() => import('./pages/Reports'));
+const History = lazy(() => import('./pages/History'));
+const MyHistory = lazy(() => import('./pages/MyHistory'));
+const EmployeeDetails = lazy(() => import('./pages/EmployeeDetails'));
+const Profile = lazy(() => import('./pages/Profile'));
 
 function App() {
     return (

@@ -28,7 +28,10 @@ class SupabaseClient {
                     id: user.id,
                     email: user.email,
                     full_name: employee.full_name,
-                    role: employee.email?.includes('admin') ? 'admin' : 'employee'
+                    role: employee.is_admin ? 'admin' : 'employee',
+                    employee_id: employee.id,
+                    department: employee.department,
+                    position: employee.position
                 }
             }
 
@@ -36,7 +39,7 @@ class SupabaseClient {
                 id: user.id,
                 email: user.email,
                 full_name: user.email?.split('@')[0],
-                role: user.email?.includes('admin') ? 'admin' : 'employee'
+                role: 'employee'
             }
         },
 
@@ -59,7 +62,10 @@ class SupabaseClient {
                 id: data.user.id,
                 email: data.user.email,
                 full_name: employee?.full_name || data.user.email?.split('@')[0],
-                role: data.user.email?.includes('admin') ? 'admin' : 'employee'
+                role: employee?.is_admin ? 'admin' : 'employee',
+                employee_id: employee?.id,
+                department: employee?.department,
+                position: employee?.position
             }
         },
 

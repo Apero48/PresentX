@@ -16,6 +16,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { StatePanel } from "@/components/ui/StatePanel";
 
 export default function History() {
     const [searchTerm, setSearchTerm] = useState('');
@@ -109,46 +110,59 @@ export default function History() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Date</TableHead>
-                                        <TableHead>Employé</TableHead>
-                                        <TableHead>Arrivée</TableHead>
-                                        <TableHead>Départ</TableHead>
-                                        <TableHead>Heures</TableHead>
-                                        <TableHead>Statut</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filteredAttendances.map((attendance) => {
-                                        const statusInfo = getStatusBadge(attendance.status);
-                                        return (
-                                            <TableRow key={attendance.id}>
-                                                <TableCell className="font-medium">
-                                                    {format(new Date(attendance.date), 'dd MMM yyyy', { locale: fr })}
-                                                </TableCell>
-                                                <TableCell>{attendance.employee_name}</TableCell>
-                                                <TableCell>{attendance.check_in}</TableCell>
-                                                <TableCell>{attendance.check_out || '-'}</TableCell>
-                                                <TableCell>
-                                                    {attendance.hours_worked ? `${attendance.hours_worked.toFixed(1)}h` : '-'}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Badge className={`${statusInfo.className} border`}>
-                                                        {statusInfo.label}
-                                                    </Badge>
-                                                </TableCell>
-                                            </TableRow>
-                                        );
-                                    })}
-                                </TableBody>
-                            </Table>
-                        </div>
-                        {filteredAttendances.length === 0 && (
-                            <div className="text-center py-12 text-gray-400">
-                                Aucun enregistrement trouvé
+                        {isLoading ? (
+                            <div className="py-8">
+                                <StatePanel
+                                    type="loading"
+                                    title="Chargement de l’historique"
+                                    description="Nous récupérons les enregistrements de présence..."
+                                />
+                            </div>
+                        ) : filteredAttendances.length > 0 ? (
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Date</TableHead>
+                                            <TableHead>Employé</TableHead>
+                                            <TableHead>Arrivée</TableHead>
+                                            <TableHead>Départ</TableHead>
+                                            <TableHead>Heures</TableHead>
+                                            <TableHead>Statut</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {filteredAttendances.map((attendance) => {
+                                            const statusInfo = getStatusBadge(attendance.status);
+                                            return (
+                                                <TableRow key={attendance.id}>
+                                                    <TableCell className="font-medium">
+                                                        {format(new Date(attendance.date), 'dd MMM yyyy', { locale: fr })}
+                                                    </TableCell>
+                                                    <TableCell>{attendance.employee_name}</TableCell>
+                                                    <TableCell>{attendance.check_in}</TableCell>
+                                                    <TableCell>{attendance.check_out || '-'}</TableCell>
+                                                    <TableCell>
+                                                        {attendance.hours_worked ? `${attendance.hours_worked.toFixed(1)}h` : '-'}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Badge className={`${statusInfo.className} border`}>
+                                                            {statusInfo.label}
+                                                        </Badge>
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        ) : (
+                            <div className="py-8">
+                                <StatePanel
+                                    type="empty"
+                                    title="Aucun enregistrement trouvé"
+                                    description="Essayez un autre filtre de date ou de recherche."
+                                />
                             </div>
                         )}
                     </CardContent>
