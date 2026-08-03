@@ -19,9 +19,13 @@ export default function Login() {
         setIsLoading(true);
 
         try {
-            await supabaseClient.auth.login(email, password);
+            const user = await supabaseClient.auth.login(email, password);
             toast.success('Connexion réussie !');
-            navigate('/Dashboard');
+            if (user.role === 'admin') {
+                navigate('/Dashboard');
+            } else {
+                navigate('/Scanner');
+            }
         } catch (error) {
             console.error('Login error:', error);
             toast.error('Email ou mot de passe incorrect');
