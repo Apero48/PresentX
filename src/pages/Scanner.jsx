@@ -1,0 +1,366 @@
+import React, { useState, useEffect } from 'react';
+import { supabaseClient } from '@/api/supabaseClient';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { Card, CardContent } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
+import QRScanner from '../components/qr/QRScanner';
+import SuccessAnimation from '../components/notifications/SuccessAnimation';
+import ActionModal from '../components/scanner/ActionModal';
+import InterventionModal from '../components/scanner/InterventionModal';
+import EmployeeSelector from '../components/scanner/EmployeeSelector';
+import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
+import { format } from 'date-fns';
+import { createAttendance, updateAttendance, getTodayAttendanceForEmployee, calculateHoursWorked } from '@/services/attendanceService';
+import { callAttendanceEdgeFunction } from '@/services/attendanceEdgeFunctionService';
+
+export default function Scanner() {
+    const [scanResult, setScanResult] = useState(null);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
+    const [showActionModal, setShowActionModal] = useState(false);
+    const [showInterventionModal, setShowInterventionModal] = useState(false);
+    const [showEmployeeSelector, setShowEmployeeSelector] = useState(false);
+    const [interventionType, setInterventionType] = useState(null);
+    const [currentEmployee, setCurrentEmployee] = useState(null);
+    const [currentAttendance, setCurrentAttendance] = useState(null);
+    const [employeeProfile, setEmployeeProfile] = useState(null);
+    const [employeeLoading, setEmployeeLoading] = useState(true);
+
+    const queryClient = useQueryClient();
+
+    const { data: employees = [] } = useQuery({
+        queryKey: ['employees'],
+        queryFn: () => supabaseClient.entities.Employee.list()
+    });
+
+    useEffect(() => {
+        const loadEmployeeData = async () => {
+            try {
+                const currentUser = await supabaseClient.auth.me();
+                const employeeRecords = await supabaseClient.entities.Employee.filter({ email: currentUser.email });
+                const employee = employeeRecords?.[0] || null;
+                setEmployeeProfile(employee);
+
+                if (employee) {
+                    const today = format(new Date(), 'yyyy-MM-dd');
+                    const attendances = await supabaseClient.entities.Attendance.filter({ employee_id: employee.id, date: today });
+                    setCurrentAttendance(attendances?.[0] || null);
+                }
+            } catch (error) {
+                console.error('Erreur chargement employé:', error);
+            } finally {
+                setEmployeeLoading(false);
+            }
+        };
+
+        loadEmployeeData();
+    }, []);
+
+    const arrivalTime = currentAttendance?.check_in || '--:--';
+    const departureTime = currentAttendance?.check_out || '--:--';
+    const workedHours = currentAttendance?.hours_worked ? `${Number(currentAttendance.hours_worked).toFixed(1)}h` : '0h';
+    const dayStatus = currentAttendance?.status === 'late' ? 'En retard' : currentAttendance?.status === 'present' ? 'Présent' : 'Pas encore pointé';
+
+    const createAttendanceMutation = useMutation({
+        mutationFn: (data) => createAttendance(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries(['attendances']);
+            queryClient.invalidateQueries(['todayAttendances']);
+        }
+    });
+
+    const updateAttendanceMutation = useMutation({
+        mutationFn: ({ id, data }) => updateAttendance(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries(['attendances']);
+            queryClient.invalidateQueries(['todayAttendances']);
+        }
+    });
+
+    const handleScan = async (qrData) => {
+        if (qrData === "ATTENDANCE-CHECK-IN") {
+            setShowEmployeeSelector(true);
+            setIsProcessing(false);
+        } else {
+            toast.error("❌ QR Code non valide");
+            setIsProcessing(false);
+        }
+    };
+
+    const handleEmployeeSelect = async (employee) => {
+        setShowEmployeeSelector(false);
+        setIsProcessing(true);
+        setCurrentEmployee(employee);
+
+        try {
+            const today = format(new Date(), 'yyyy-MM-dd');
+            const currentTime = format(new Date(), 'HH:mm');
+
+            const todayAttendance = await getTodayAttendanceForEmployee(employee.id);
+
+            if (!todayAttendance) {
+                // Premier scan = Arrivée
+                const startTime = employee.start_time || '08:00';
+                const [startHour, startMinute] = startTime.split(':').map(Number);
+                const [currentHour, currentMinute] = currentTime.split(':').map(Number);
+
+                const startTotalMinutes = startHour * 60 + startMinute;
+                const currentTotalMinutes = currentHour * 60 + currentMinute;
+                const toleranceMinutes = 15;
+
+                let status = 'present';
+                if (currentTotalMinutes > startTotalMinutes + toleranceMinutes) {
+                    status = 'late';
+                }
+
+                await createAttendanceMutation.mutateAsync({
+                    employee_id: employee.id,
+                    employee_name: employee.full_name,
+                    date: today,
+                    check_in: currentTime,
+                    status: status,
+                    interventions: []
+                });
+
+                await callAttendanceEdgeFunction({
+                    action: 'create-attendance',
+                    payload: {
+                        employee_id: employee.id,
+                        employee_name: employee.full_name,
+                        date: today,
+                        check_in: currentTime,
+                        status: status,
+                        interventions: []
+                    }
+                });
+
+                setSuccessMessage(`✅ Bienvenue ${employee.full_name}!\nArrivée: ${currentTime}`);
+                setShowSuccess(true);
+
+                if (status === 'late') {
+                    toast.error(`⏰ Retard enregistré pour ${employee.full_name}`, {
+                        description: `Arrivée à ${currentTime} (Heure prévue: ${startTime})`
+                    });
+                } else {
+                    toast.success(`✅ Arrivée confirmée - ${currentTime}`);
+                }
+
+                setTimeout(() => setShowSuccess(false), 3000);
+            } else {
+                // Scan suivant - montrer le menu d'actions
+                setCurrentAttendance(todayAttendance);
+                setShowActionModal(true);
+            }
+
+            setIsProcessing(false);
+        } catch (error) {
+            toast.error("Erreur lors du traitement");
+            setIsProcessing(false);
+        }
+    };
+
+    const handleAction = async (actionKey) => {
+        setShowActionModal(false);
+        const currentTime = format(new Date(), 'HH:mm');
+
+        if (actionKey === 'lunch_start') {
+            await updateAttendanceMutation.mutateAsync({
+                id: currentAttendance.id,
+                data: { ...currentAttendance, lunch_start: currentTime }
+            });
+            setSuccessMessage(`☕ Bonne pause déjeuner!\nDébut: ${currentTime}`);
+            setShowSuccess(true);
+            toast.success(`☕ Pause déjeuner - ${currentTime}`);
+            setTimeout(() => setShowSuccess(false), 3000);
+        } else if (actionKey === 'lunch_end') {
+            await updateAttendanceMutation.mutateAsync({
+                id: currentAttendance.id,
+                data: { ...currentAttendance, lunch_end: currentTime }
+            });
+            setSuccessMessage(`🍽️ Bon retour!\nReprise: ${currentTime}`);
+            setShowSuccess(true);
+            toast.success(`🍽️ Retour de pause - ${currentTime}`);
+            setTimeout(() => setShowSuccess(false), 3000);
+        } else if (actionKey === 'intervention_start') {
+            setInterventionType('start');
+            setShowInterventionModal(true);
+        } else if (actionKey === 'intervention_end') {
+            setInterventionType('end');
+            setShowInterventionModal(true);
+        } else if (actionKey === 'check_out') {
+            const checkInTime = currentAttendance.check_in;
+            const hoursWorked = calculateHoursWorked(checkInTime, currentTime, currentAttendance.lunch_start, currentAttendance.lunch_end);
+
+            await updateAttendanceMutation.mutateAsync({
+                id: currentAttendance.id,
+                data: {
+                    ...currentAttendance,
+                    check_out: currentTime,
+                    hours_worked: hoursWorked.toFixed(2)
+                }
+            });
+
+            setSuccessMessage(`👋 Bonne soirée ${currentEmployee.full_name}!\nDépart: ${currentTime}\nHeures: ${hoursWorked.toFixed(1)}h`);
+            setShowSuccess(true);
+            toast.success(`👋 Départ enregistré - ${currentTime}`, {
+                description: `${hoursWorked.toFixed(1)} heures travaillées`
+            });
+            setTimeout(() => setShowSuccess(false), 3000);
+        }
+    };
+
+    const handleInterventionConfirm = async (data) => {
+        setShowInterventionModal(false);
+        const currentTime = format(new Date(), 'HH:mm');
+
+        const interventions = currentAttendance.interventions || [];
+
+        if (interventionType === 'start') {
+            interventions.push({
+                departure_time: currentTime,
+                reason: data.reason,
+                location: data.location
+            });
+
+            await updateAttendanceMutation.mutateAsync({
+                id: currentAttendance.id,
+                data: { ...currentAttendance, interventions }
+            });
+
+            setSuccessMessage(`🚗 Intervention enregistrée\nDépart: ${currentTime}\n${data.location}`);
+            setShowSuccess(true);
+            toast.success(`🚗 Départ en intervention - ${currentTime}`, {
+                description: data.location
+            });
+            setTimeout(() => setShowSuccess(false), 3000);
+        } else {
+            const lastIntervention = interventions[interventions.length - 1];
+            if (lastIntervention) {
+                lastIntervention.return_time = currentTime;
+            }
+
+            await updateAttendanceMutation.mutateAsync({
+                id: currentAttendance.id,
+                data: { ...currentAttendance, interventions }
+            });
+
+            setSuccessMessage(`✅ Retour d'intervention\nRetour: ${currentTime}`);
+            setShowSuccess(true);
+            toast.success(`✅ Retour d'intervention - ${currentTime}`);
+            setTimeout(() => setShowSuccess(false), 3000);
+        }
+    };
+
+    const hasActiveIntervention = () => {
+        if (!currentAttendance?.interventions) return false;
+        const lastIntervention = currentAttendance.interventions[currentAttendance.interventions.length - 1];
+        return lastIntervention && !lastIntervention.return_time;
+    };
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-4 sm:p-6">
+            <div className="max-w-3xl mx-auto space-y-6">
+                <div className="rounded-3xl bg-white/90 border border-slate-200 p-6 shadow-xl">
+                    <div className="flex items-start justify-between gap-4">
+                        <div>
+                            <p className="text-sm text-gray-500">Bonjour,</p>
+                            <h1 className="text-3xl font-bold text-slate-900">{employeeProfile?.full_name || 'Bienvenue'}</h1>
+                            <p className="mt-2 text-sm text-slate-500">Voici un aperçu de votre activité du jour.</p>
+                        </div>
+                        <div className="rounded-3xl bg-blue-600 p-4 text-white shadow-lg">
+                            <p className="text-xs uppercase tracking-[0.2em] text-blue-100">Pointage</p>
+                            <p className="mt-2 text-2xl font-bold">{dayStatus}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="rounded-3xl bg-white border border-slate-200 p-5 shadow-sm">
+                        <p className="text-sm text-slate-500">Arrivée</p>
+                        <p className="mt-3 text-3xl font-bold text-slate-900">{arrivalTime}</p>
+                        <p className="mt-2 text-sm text-slate-500">Heure de pointage</p>
+                    </div>
+                    <div className="rounded-3xl bg-white border border-slate-200 p-5 shadow-sm">
+                        <p className="text-sm text-slate-500">Départ</p>
+                        <p className="mt-3 text-3xl font-bold text-slate-900">{departureTime}</p>
+                        <p className="mt-2 text-sm text-slate-500">Heure prévue ou à venir</p>
+                    </div>
+                    <div className="rounded-3xl bg-white border border-slate-200 p-5 shadow-sm">
+                        <p className="text-sm text-slate-500">Heures travaillées</p>
+                        <p className="mt-3 text-3xl font-bold text-slate-900">{workedHours}</p>
+                        <p className="mt-2 text-sm text-slate-500">Aujourd'hui</p>
+                    </div>
+                    <div className="rounded-3xl bg-white border border-slate-200 p-5 shadow-sm">
+                        <p className="text-sm text-slate-500">Statut du jour</p>
+                        <p className="mt-3 text-3xl font-bold text-slate-900">{dayStatus}</p>
+                        <p className="mt-2 text-sm text-slate-500">Pointage en cours</p>
+                    </div>
+                </div>
+
+                <Card className="border-0 shadow-2xl bg-white">
+                    <CardContent className="p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <p className="text-sm text-slate-500">QR Code pointage</p>
+                                <h2 className="text-2xl font-bold text-slate-900">Scannez pour pointer</h2>
+                            </div>
+                            <div className="rounded-2xl bg-blue-100 px-3 py-2 text-sm font-semibold text-blue-700">Rapide</div>
+                        </div>
+                        <div className="rounded-3xl overflow-hidden border border-slate-200 bg-slate-50">
+                            <QRScanner onScan={handleScan} />
+                        </div>
+                        <p className="mt-4 text-sm text-slate-500">Scannez le QR code affiché dans votre entreprise ou sur votre badge.</p>
+                    </CardContent>
+                </Card>
+
+                <AnimatePresence>
+                    {isProcessing && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                        >
+                            <Card className="border-0 shadow-lg bg-blue-50">
+                                <CardContent className="p-6">
+                                    <div className="flex items-center justify-center gap-3">
+                                        <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
+                                        <p className="text-lg font-semibold text-blue-900">Traitement en cours...</p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                <SuccessAnimation show={showSuccess} message={successMessage} />
+
+                <ActionModal
+                    isOpen={showActionModal}
+                    onClose={() => setShowActionModal(false)}
+                    onAction={handleAction}
+                    currentState={{
+                        lunch_start: currentAttendance?.lunch_start,
+                        lunch_end: currentAttendance?.lunch_end,
+                        hasActiveIntervention: hasActiveIntervention()
+                    }}
+                />
+
+                <InterventionModal
+                    isOpen={showInterventionModal}
+                    onClose={() => setShowInterventionModal(false)}
+                    onConfirm={handleInterventionConfirm}
+                    isReturn={interventionType === 'end'}
+                />
+
+                <EmployeeSelector
+                    isOpen={showEmployeeSelector}
+                    onClose={() => setShowEmployeeSelector(false)}
+                    onSelect={handleEmployeeSelect}
+                    employees={employees}
+                />
+            </div>
+        </div>
+    );
+}
