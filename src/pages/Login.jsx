@@ -30,7 +30,22 @@ export default function Login() {
             }
         } catch (error) {
             console.error('Login error:', error);
-            toast.error('Email ou mot de passe incorrect');
+            const errorCode = error?.code || error?.error_code;
+            const errorMessage = (error?.message || '').toLowerCase();
+
+            if (errorCode === 'email_not_confirmed' || errorMessage.includes('email not confirmed')) {
+                toast.error('Email non confirmé', {
+                    description: 'Consultez votre boîte mail et confirmez votre adresse avant de vous connecter.'
+                });
+            } else if (errorCode === 'invalid_credentials' || errorMessage.includes('invalid login credentials')) {
+                toast.error('Email ou mot de passe incorrect', {
+                    description: 'Vérifiez l’adresse utilisée lors de la création du compte et le mot de passe initial.'
+                });
+            } else {
+                toast.error('Connexion impossible', {
+                    description: error?.message || 'Vérifiez la configuration Supabase et réessayez.'
+                });
+            }
         } finally {
             setIsLoading(false);
         }
