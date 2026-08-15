@@ -9,7 +9,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 const getRoleFromUser = (user, employee) => {
     const email = (user?.email || employee?.email || '').toLowerCase()
-    if (email === 'admin@presencex.com' || email.includes('admin')) {
+    if (email === 'admin@presencex.com') {
         return 'admin'
     }
 
@@ -100,6 +100,16 @@ class SupabaseClient {
 
             if (error) throw error
             return data.user
+        },
+
+        createEmployeeAccount: async (employeeData) => {
+            const { data, error } = await supabase.functions.invoke('create-employee', {
+                body: employeeData
+            })
+
+            if (error) throw error
+            if (!data?.success) throw new Error(data?.error || 'Création du compte impossible')
+            return data.employee
         },
 
         logout: async () => {

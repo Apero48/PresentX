@@ -25,6 +25,7 @@ export default function Employees() {
     const [formData, setFormData] = useState({
         full_name: '',
         email: '',
+        initial_password: '',
         phone: '',
         department: '',
         position: '',
@@ -53,24 +54,32 @@ export default function Employees() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Create without QR code first to get the ID
+        if (formData.initial_password.length < 8) {
+            toast.error('Le mot de passe initial doit contenir au moins 8 caractères');
+            return;
+        }
+
         const dataToSave = {
-            ...formData,
-            employee_code: formData.employee_code || `EMP${Date.now().toString().slice(-6)}`
+            full_name: formData.full_name,
+            email: formData.email,
+            password: formData.initial_password,
+            phone: formData.phone,
+            department: formData.department,
+            position: formData.position,
+            employee_code: formData.employee_code,
+            start_time: formData.start_time
         };
 
         try {
-            const newEmployee = await supabaseClient.entities.Employee.create(dataToSave);
-            // Update with unique QR code based on employee ID
-            await supabaseClient.entities.Employee.update(newEmployee.id, {
-                qr_code: `QR-${newEmployee.id}`
-            });
-            queryClient.invalidateQueries(['employees']);
+            await supabaseClient.auth.createEmployeeAccount(dataToSave);
+            queryClient.invalidateQueries({ queryKey: ['employees'] });
             setIsDialogOpen(false);
             resetForm();
-            toast.success('Employé créé avec succès');
+            toast.success('Compte employé créé avec succès', {
+                description: 'L’employé peut maintenant se connecter avec son email et son mot de passe initial.'
+            });
         } catch (error) {
-            toast.error('Erreur lors de la création');
+            toast.error(error?.message || 'Erreur lors de la création du compte');
         }
     };
 
@@ -78,6 +87,7 @@ export default function Employees() {
         setFormData({
             full_name: '',
             email: '',
+            initial_password: '',
             phone: '',
             department: '',
             position: '',
@@ -179,6 +189,19 @@ export default function Employees() {
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                         required
                                     />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Mot de passe initial *</Label>
+                                    <Input
+                                        type="password"
+                                        value={formData.initial_password}
+                                        onChange={(e) => setFormData({ ...formData, initial_password: e.target.value })}
+                                        placeholder="8 caractères minimum"
+                                        autoComplete="new-password"
+                                        minLength={8}
+                                        required
+                                    />
+                                    <p className="text-xs text-gray-500">À transmettre à l’employé de manière sécurisée.</p>
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Téléphone</Label>

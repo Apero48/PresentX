@@ -60,7 +60,19 @@ VITE_SUPABASE_URL=votre_url_supabase
 VITE_SUPABASE_ANON_KEY=votre_anon_key
 ```
 
-### 4. Créer un utilisateur admin
+### 4. Activer la création de comptes employés
+
+Exécutez `supabase/employee_accounts.sql` dans le SQL Editor de Supabase afin d’ajouter le rôle explicite des employés et de marquer l’administrateur existant.
+
+Déployez ensuite l’Edge Function qui utilise la clé `service_role` uniquement côté Supabase :
+
+```bash
+supabase functions deploy create-employee
+```
+
+La clé `SUPABASE_SERVICE_ROLE_KEY` doit rester configurée comme secret de l’Edge Function. Elle ne doit jamais être ajoutée à `.env.local`, au code React ou au dépôt Git. Dans le tableau Employés, un administrateur peut ensuite créer un compte en renseignant le nom, l’email et un mot de passe initial d’au moins 8 caractères. Le mot de passe doit être transmis à l’employé par un canal sécurisé.
+
+### 5. Créer un utilisateur admin
 
 ```sql
 -- Dans Supabase SQL Editor
