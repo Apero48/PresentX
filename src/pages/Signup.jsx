@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { supabaseClient, supabase } from "@/api/supabaseClient";
+import { supabaseClient } from "@/api/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -40,80 +40,39 @@ export default function Signup() {
         setIsLoading(true);
 
         try {
-            // 1. Créer l'utilisateur dans Supabase Auth
-            const { data: authData, error: authError } = await supabase.auth.signUp({
-                email: formData.email,
-                password: formData.password,
-                options: {
-                    emailRedirectTo: window.location.origin,
-                    data: {
-                        full_name: formData.full_name
-                    }
-                }
+            const normalizedEmail = formData.email.trim().toLowerCase();
+            const authData = await supabaseClient.auth.signup(normalizedEmail, formData.password, {
+                full_name: formData.full_name.trim()
             });
 
-            if (authError) {
-                console.error('Auth error:', authError);
-
-                // Gérer les différents types d'erreurs
-                if (authError.message.includes('already registered') || authError.message.includes('already been registered')) {
-                    toast.error('Cet email est déjà utilisé');
-                } else if (authError.message.includes('invalid') || authError.message.includes('Invalid')) {
-                    toast.error('Email invalide. Utilisez un vrai email (ex: votre.nom@gmail.com)');
-                } else if (authError.message.includes('rate limit')) {
-                    toast.error('Trop de tentatives. Veuillez réessayer dans quelques minutes.');
-                } else {
-                    toast.error(`Erreur: ${authError.message}`);
-                }
-                setIsLoading(false);
-                return;
+            if (!authData?.user) {
+                throw new Error('Supabase n’a pas retourné le compte créé');
             }
 
-            const userId = authData.user?.id;
-
-            if (!userId) {
-                toast.error('Erreur lors de la création du compte');
-                setIsLoading(false);
-                return;
-            }
-
-            // 2. Créer l'enregistrement employé avec valeurs par défaut
-            const employeeData = {
-                full_name: formData.full_name,
-                email: formData.email,
-                phone: '',
-                department: 'Non défini',
-                position: 'Employé',
-                employee_code: `EMP${Date.now().toString().slice(-6)}`,
-                qr_code: `QR-${userId}`,
-                is_active: true,
-                user_id: userId
-            };
-
-            const { error: employeeError } = await supabase
-                .from('employees')
-                .insert([employeeData]);
-
-            if (employeeError) {
-                console.error('Employee creation error:', employeeError);
-                toast.error('Erreur lors de la création du profil employé');
-                setIsLoading(false);
-                return;
-            }
-
-            // Succès !
-            toast.success('Compte créé avec succès ! 🎉', {
-                description: 'Vous pouvez maintenant vous connecter'
+            // Le profil employees est créé automatiquement par le trigger Supabase
+            // handle_new_user, même lorsque la confirmation email est activée.
+            const requiresConfirmation = !authData.session;
+            toast.success('Compte employé créé avec succès', {
+                description: requiresConfirmation
+                    ? 'Confirmez votre adresse email avant de vous connecter.'
+                    : 'Vous pouvez maintenant vous connecter.'
             });
 
-            // Redirection vers login après 2 secondes
             setTimeout(() => {
                 navigate('/login');
-            }, 2000);
+            }, 2200);
 
         } catch (error) {
             console.error('Signup error:', error);
-            toast.error('Une erreur est survenue lors de l\'inscription');
+            const message = (error?.message || '').toLowerCase();
+
+            if (message.includes('already registered') || message.includes('already been registered') || message.includes('already exists')) {
+                toast.error('Cet email est déjà utilisé');
+            } else if (message.includes('rate limit')) {
+                toast.error('Trop de tentatives. Veuillez réessayer dans quelques minutes.');
+            } else {
+                toast.error(error?.message || 'Erreur lors de la création du compte');
+            }
         } finally {
             setIsLoading(false);
         }

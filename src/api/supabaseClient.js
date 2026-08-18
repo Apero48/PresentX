@@ -100,7 +100,7 @@ class SupabaseClient {
             })
 
             if (error) throw error
-            return data.user
+            return data
         },
 
         createEmployeeAccount: async (employeeData) => {
