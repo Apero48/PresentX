@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 
-import { getCachedOfflineSession, getCachedOfflineEmployee, cacheOfflineSession } from '@/services/offlineAttendanceStore';
+import { getCachedOfflineSession, getCachedOfflineEmployee, cacheOfflineSession, clearOfflineSession } from '@/services/offlineAttendanceStore';
 
 // Configuration Supabase
 // IMPORTANT: Remplacez ces valeurs par vos propres credentials Supabase
@@ -116,9 +116,13 @@ class SupabaseClient {
         },
 
         logout: async () => {
-            const { error } = await supabase.auth.signOut()
-            if (error) throw error
-            window.location.href = '/login'
+            try {
+                const { error } = await supabase.auth.signOut()
+                if (error) throw error
+            } finally {
+                clearOfflineSession()
+                window.location.href = '/login'
+            }
         },
 
         redirectToLogin: () => {
