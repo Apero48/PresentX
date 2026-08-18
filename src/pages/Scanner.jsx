@@ -39,7 +39,7 @@ export default function Scanner() {
         const loadEmployeeData = async () => {
             try {
                 const currentUser = await supabaseClient.auth.me();
-                const employeeRecords = await supabaseClient.entities.Employee.filter({ email: currentUser.email });
+                const employeeRecords = await supabaseClient.entities.Employee.filter({ user_id: currentUser.id });
                 const employee = employeeRecords?.[0] || null;
                 setEmployeeProfile(employee);
 
@@ -163,7 +163,10 @@ export default function Scanner() {
 
             setIsProcessing(false);
         } catch (error) {
-            toast.error("Erreur lors du traitement");
+            console.error('Erreur traitement pointage:', error);
+            toast.error('Erreur lors du traitement', {
+                description: error?.message || 'Impossible de créer ou récupérer le pointage.'
+            });
             setIsProcessing(false);
         }
     };
