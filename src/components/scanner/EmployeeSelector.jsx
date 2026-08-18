@@ -51,7 +51,7 @@ export default function EmployeeSelector({ isOpen, onClose, onSelect, employees 
                             >
                                 <Avatar className="w-16 h-16 ring-2 ring-blue-100">
                                     <AvatarImage src={employee.profile_picture} />
-                                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xl font-bold">
+                                    <AvatarFallback className="msa-gradient text-white text-xl font-bold">
                                         {employee.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                                     </AvatarFallback>
                                 </Avatar>

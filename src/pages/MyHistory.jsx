@@ -50,7 +50,7 @@ export default function MyHistory() {
 
     if (!employee) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-6">
+            <div className="min-h-screen flex items-center justify-center msa-gradient-soft p-6">
                 <div className="text-center">
                     <p className="text-gray-500">Chargement de vos données...</p>
                 </div>
@@ -59,7 +59,7 @@ export default function MyHistory() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-4 sm:p-6">
+        <div className="min-h-screen msa-gradient-soft p-4 sm:p-6">
             <div className="max-w-3xl mx-auto space-y-6">
                 <div className="rounded-3xl bg-white/90 border border-slate-200 p-6 shadow-xl">
                     <p className="text-sm text-slate-500">Historique</p>

@@ -171,20 +171,20 @@ export default function Profile() {
 
     if (!user) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
+            <div className="min-h-screen flex items-center justify-center msa-gradient-soft">
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-4 sm:p-6">
+        <div className="min-h-screen msa-gradient-soft p-4 sm:p-6">
             <div className="max-w-3xl mx-auto space-y-6">
                 <div className="rounded-3xl bg-white/95 border border-slate-200 p-6 shadow-xl">
                     <div className="flex flex-col items-center text-center gap-4">
                         <Avatar className="w-28 h-28 ring-4 ring-blue-100">
                             <AvatarImage src={employee?.profile_picture} />
-                            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-4xl font-bold">
+                            <AvatarFallback className="msa-gradient text-white text-4xl font-bold">
                                 {user.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                         </Avatar>
@@ -210,7 +210,7 @@ export default function Profile() {
                         <CardTitle className="px-6 pt-6 text-xl font-semibold text-slate-900">Informations</CardTitle>
                         <CardContent className="space-y-4 px-6 pb-6">
                             <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-3xl">
-                                <Mail className="w-5 h-5 text-blue-600" />
+                                <Mail className="w-5 h-5 text-[#1458B8]" />
                                 <div>
                                     <p className="text-xs text-slate-500">Email</p>
                                     <p className="font-medium text-slate-900">{user.email}</p>
@@ -218,7 +218,7 @@ export default function Profile() {
                             </div>
                             {employee?.department && (
                                 <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-3xl">
-                                    <Briefcase className="w-5 h-5 text-blue-600" />
+                                    <Briefcase className="w-5 h-5 text-[#1458B8]" />
                                     <div>
                                         <p className="text-xs text-slate-500">Département</p>
                                         <p className="font-medium text-slate-900">{employee.department}</p>
@@ -227,7 +227,7 @@ export default function Profile() {
                             )}
                             {employee?.start_time && (
                                 <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-3xl">
-                                    <Clock className="w-5 h-5 text-blue-600" />
+                                    <Clock className="w-5 h-5 text-[#1458B8]" />
                                     <div>
                                         <p className="text-xs text-slate-500">Horaires</p>
                                         <p className="font-medium text-slate-900">{employee.start_time} - {employee.end_time || '17:00'}</p>
@@ -259,10 +259,10 @@ export default function Profile() {
                 </div>
 
                 {user?.role === 'admin' && (
-                    <Card className="border-0 shadow-2xl bg-gradient-to-br from-blue-50 to-purple-50">
+                    <Card className="border-0 shadow-2xl msa-gradient-soft">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
-                                <QrCode className="w-6 h-6 text-blue-600" />
+                                <QrCode className="w-6 h-6 text-[#1458B8]" />
                                 Gestion des QR Codes
                             </CardTitle>
                         </CardHeader>
@@ -272,7 +272,7 @@ export default function Profile() {
                             </p>
                             <Button
                                 onClick={generateUniversalQR}
-                                className="w-full py-5 text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                                className="w-full py-5 text-lg font-semibold msa-gradient hover:opacity-95"
                             >
                                 <QrCode className="w-5 h-5 mr-2" />
                                 Générer le QR Code Universel

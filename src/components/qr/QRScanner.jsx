@@ -123,7 +123,7 @@ export default function QRScanner({ onScan, onError }) {
                         onClick={isScanning ? stopScanning : startScanning}
                         className={`w-full py-6 text-lg font-semibold ${isScanning
                                 ? 'bg-red-500 hover:bg-red-600'
-                                : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700'
+                                : 'msa-gradient hover:opacity-95'
                             }`}
                         size="lg"
                     >

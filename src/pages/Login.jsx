@@ -52,12 +52,12 @@ export default function Login() {
     };
 
     return (
-        <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900">
+        <div className="min-h-screen relative overflow-hidden bg-slate-950">
             {/* Animated background elements */}
             <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
-                <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+                <div className="absolute -top-40 -right-40 w-80 h-80 bg-[#C51A1F] rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+                <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-[#1458B8] rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-[#C51A1F] rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
             </div>
 
             <div className="relative min-h-screen flex items-center justify-center p-4">
@@ -75,17 +75,17 @@ export default function Login() {
                                 transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
                                 className="relative"
                             >
-                                <div className="w-24 h-24 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-4xl shadow-lg relative">
-                                    PX
+                                <div className="w-full max-w-[260px] h-24 mx-auto mb-6 rounded-2xl bg-white flex items-center justify-center shadow-lg relative p-3">
+                                    <img src="/assets/msa-inter-logo.png" alt="MSA INTER" className="max-h-full w-full object-contain" />
                                     <Sparkles className="absolute -top-2 -right-2 w-6 h-6 text-yellow-400 animate-pulse" />
                                 </div>
                             </motion.div>
 
-                            <CardTitle className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
-                                PresenceX
+                            <CardTitle className="text-4xl font-bold text-[#1458B8] mb-2">
+                                MSA INTER
                             </CardTitle>
                             <CardDescription className="text-gray-600 text-lg">
-                                Gestion intelligente de présence
+                                Gestion intelligente de présence pour votre entreprise
                             </CardDescription>
                         </CardHeader>
 
@@ -99,7 +99,7 @@ export default function Login() {
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         required
-                                        className="h-12 px-4 border-2 border-gray-200 focus:border-blue-500 transition-all"
+                                        className="h-12 px-4 border-2 border-gray-200 focus:border-[#1458B8] transition-all"
                                     />
                                 </div>
 
@@ -111,14 +111,14 @@ export default function Login() {
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         required
-                                        className="h-12 px-4 border-2 border-gray-200 focus:border-blue-500 transition-all"
+                                        className="h-12 px-4 border-2 border-gray-200 focus:border-[#1458B8] transition-all"
                                     />
                                 </div>
 
                                 <Button
                                     type="submit"
                                     disabled={isLoading}
-                                    className="w-full h-14 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
+                                    className="w-full h-14 msa-gradient hover:opacity-95 text-white text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
                                 >
                                     {isLoading ? (
                                         <div className="flex items-center gap-2">
@@ -147,7 +147,7 @@ export default function Login() {
                                 <Link to="/signup">
                                     <Button
                                         variant="outline"
-                                        className="w-full mt-6 h-12 border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold transition-all group"
+                                        className="w-full mt-6 h-12 border-2 border-[#1458B8] text-[#1458B8] hover:bg-blue-50 font-semibold transition-all group"
                                     >
                                         Créer un compte employé
                                         <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
@@ -155,7 +155,7 @@ export default function Login() {
                                 </Link>
                             </div>
 
-                            <div className="mt-8 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-100">
+                            <div className="mt-8 p-4 msa-gradient-soft rounded-xl border border-blue-100">
                                 <p className="text-xs text-gray-600 text-center">
                                     <span className="font-semibold">Démo Admin :</span> admin@presencex.com
                                 </p>

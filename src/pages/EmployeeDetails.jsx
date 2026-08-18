@@ -181,7 +181,7 @@ export default function EmployeeDetails() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-6">
+        <div className="min-h-screen msa-gradient-soft p-6">
             <div className="max-w-7xl mx-auto space-y-6">
                 <Link to={createPageUrl('Employees')}>
                     <Button variant="ghost" className="mb-4">
@@ -195,7 +195,7 @@ export default function EmployeeDetails() {
                         <div className="flex flex-col md:flex-row gap-6">
                             <Avatar className="w-32 h-32 ring-4 ring-blue-100">
                                 <AvatarImage src={employee.profile_picture} />
-                                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-4xl font-bold">
+                                <AvatarFallback className="msa-gradient text-white text-4xl font-bold">
                                     {employee.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                                 </AvatarFallback>
                             </Avatar>
@@ -254,7 +254,7 @@ export default function EmployeeDetails() {
                         <CardContent className="p-6">
                             <div className="text-center">
                                 <p className="text-sm text-gray-500 mb-1">Total Présences</p>
-                                <p className="text-4xl font-bold text-blue-600">{presentCount}</p>
+                                <p className="text-4xl font-bold text-[#1458B8]">{presentCount}</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -277,7 +277,7 @@ export default function EmployeeDetails() {
                 </div>
 
                 <Card className="border-0 shadow-2xl">
-                    <CardHeader className="border-b bg-gradient-to-r from-blue-50 to-purple-50">
+                    <CardHeader className="border-b msa-gradient-soft">
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                             <CardTitle className="text-xl flex items-center gap-2">
                                 <Calendar className="w-5 h-5" />
@@ -298,7 +298,7 @@ export default function EmployeeDetails() {
                                     placeholder="Date fin"
                                     className="bg-white"
                                 />
-                                <Button onClick={exportToPDF} className="bg-gradient-to-r from-blue-600 to-purple-600">
+                                <Button onClick={exportToPDF} className="msa-gradient">
                                     <Download className="w-4 h-4 mr-2" />
                                     Exporter PDF
                                 </Button>
@@ -419,7 +419,7 @@ export default function EmployeeDetails() {
                             <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
                                 Annuler
                             </Button>
-                            <Button type="submit" className="bg-gradient-to-r from-blue-600 to-purple-600">
+                            <Button type="submit" className="msa-gradient">
                                 Sauvegarder
                             </Button>
                         </DialogFooter>

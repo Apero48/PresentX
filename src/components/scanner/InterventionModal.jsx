@@ -27,7 +27,7 @@ export default function InterventionModal({ isOpen, onClose, onConfirm, isReturn
             <DialogContent className="max-w-md">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <Clock className="w-5 h-5 text-blue-600" />
+                        <Clock className="w-5 h-5 text-[#1458B8]" />
                         {isReturn ? 'Retour d\'intervention' : 'Départ en intervention'}
                     </DialogTitle>
                 </DialogHeader>
@@ -73,7 +73,7 @@ export default function InterventionModal({ isOpen, onClose, onConfirm, isReturn
                     <Button
                         onClick={handleSubmit}
                         disabled={!isReturn && !reason}
-                        className="bg-gradient-to-r from-blue-600 to-purple-600"
+                        className="msa-gradient"
                     >
                         Confirmer
                     </Button>

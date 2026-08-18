@@ -42,7 +42,7 @@ export default function Layout({ children, currentPageName }) {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
+            <div className="min-h-screen flex items-center justify-center msa-gradient-soft">
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
             </div>
         );
@@ -54,23 +54,23 @@ export default function Layout({ children, currentPageName }) {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 pb-24">
+        <div className="min-h-screen msa-gradient-soft pb-24">
             {/* Header avec notifications pour admin */}
             {isAdmin && (
                 <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="flex justify-between items-center h-16">
                             <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 shadow-lg overflow-hidden">
+                                <div className="w-12 h-12 rounded-xl msa-gradient shadow-lg overflow-hidden">
                                     <img
-                                        src="/logo.png"
-                                        alt="PresenceX"
+                                        src="/assets/msa-inter-logo.png"
+                                        alt="MSA INTER"
                                         className="w-full h-full object-cover"
                                     />
                                 </div>
                                 <div>
-                                    <h1 className="text-lg font-bold text-gray-900">PresenceX</h1>
-                                    <p className="text-xs text-gray-500">Administration</p>
+                                    <h1 className="text-lg font-bold text-[#1458B8]">MSA INTER</h1>
+                                    <p className="text-xs text-slate-500">Gestion de présence</p>
                                 </div>
                             </div>
 
@@ -107,7 +107,7 @@ export default function Layout({ children, currentPageName }) {
                                     <div className={`
                     p-3 rounded-2xl transition-all duration-300
                     ${isActive
-                                            ? 'bg-gradient-to-br from-blue-600 to-purple-600 shadow-lg shadow-blue-500/50'
+                                            ? 'msa-gradient shadow-lg shadow-blue-500/50'
                                             : 'bg-transparent group-hover:bg-gray-100'
                                         }
                   `}>
@@ -122,14 +122,14 @@ export default function Layout({ children, currentPageName }) {
                                     <span className={`
                     text-xs font-medium transition-all duration-300
                     ${isActive
-                                            ? 'text-blue-600'
+                                            ? 'text-[#1458B8]'
                                             : 'text-gray-500 group-hover:text-gray-700'
                                         }
                   `}>
                                         {page.name}
                                     </span>
                                     {isActive && (
-                                        <div className="absolute -top-1 w-10 h-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full" />
+                                        <div className="absolute -top-1 w-10 h-1 msa-gradient rounded-full" />
                                     )}
                                 </Link>
                             );

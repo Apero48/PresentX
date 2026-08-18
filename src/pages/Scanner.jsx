@@ -260,7 +260,7 @@ export default function Scanner() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-4 sm:p-6">
+        <div className="min-h-screen msa-gradient-soft p-4 sm:p-6">
             <div className="max-w-3xl mx-auto space-y-6">
                 <div className="rounded-3xl bg-white/90 border border-slate-200 p-6 shadow-xl">
                     <div className="flex items-start justify-between gap-4">
@@ -325,7 +325,7 @@ export default function Scanner() {
                             <Card className="border-0 shadow-lg bg-blue-50">
                                 <CardContent className="p-6">
                                     <div className="flex items-center justify-center gap-3">
-                                        <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
+                                        <Loader2 className="w-6 h-6 text-[#1458B8] animate-spin" />
                                         <p className="text-lg font-semibold text-blue-900">Traitement en cours...</p>
                                     </div>
                                 </CardContent>

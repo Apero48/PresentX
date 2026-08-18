@@ -125,7 +125,7 @@ export default function NotificationCenter({ user }) {
             </PopoverTrigger>
             <PopoverContent className="w-96 p-0" align="end">
                 <Card className="border-0 shadow-none">
-                    <CardHeader className="border-b bg-gradient-to-r from-blue-50 to-purple-50">
+                    <CardHeader className="border-b msa-gradient-soft">
                         <div className="flex items-center justify-between">
                             <CardTitle className="text-lg flex items-center gap-2">
                                 <Bell className="w-5 h-5" />

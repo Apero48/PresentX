@@ -100,7 +100,7 @@ export default function ChatMessage({ message }) {
     return (
         <div className={cn("flex gap-3", isUser ? "justify-end" : "justify-start")}>
             {!isUser && (
-                <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center mt-0.5">
+                <div className="h-8 w-8 rounded-xl msa-gradient flex items-center justify-center mt-0.5">
                     <div className="h-2 w-2 rounded-full bg-white" />
                 </div>
             )}

@@ -27,7 +27,7 @@ export default function RecentAttendance({ attendances }) {
                         return (
                             <div key={attendance.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
                                 <Avatar>
-                                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
+                                    <AvatarFallback className="msa-gradient text-white font-semibold">
                                         {attendance.employee_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                                     </AvatarFallback>
                                 </Avatar>

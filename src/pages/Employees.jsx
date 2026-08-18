@@ -104,7 +104,7 @@ export default function Employees() {
     );
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-6">
+        <div className="min-h-screen msa-gradient-soft p-6">
             <div className="max-w-7xl mx-auto space-y-6">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
@@ -116,7 +116,7 @@ export default function Employees() {
                             resetForm();
                             setIsDialogOpen(true);
                         }}
-                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                        className="msa-gradient hover:opacity-95"
                         size="lg"
                     >
                         <Plus className="w-5 h-5 mr-2" />
@@ -158,7 +158,7 @@ export default function Employees() {
                         description="Ajoutez un employé pour commencer à gérer les présences."
                         icon={Users2}
                         action={
-                            <Button onClick={() => setIsDialogOpen(true)} className="bg-gradient-to-r from-blue-600 to-purple-600">
+                            <Button onClick={() => setIsDialogOpen(true)} className="msa-gradient">
                                 <Plus className="mr-2 h-4 w-4" />
                                 Ajouter un employé
                             </Button>
@@ -258,7 +258,7 @@ export default function Employees() {
                                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                                     Annuler
                                 </Button>
-                                <Button type="submit" className="bg-gradient-to-r from-blue-600 to-purple-600">
+                                <Button type="submit" className="msa-gradient">
                                     Créer
                                 </Button>
                             </DialogFooter>

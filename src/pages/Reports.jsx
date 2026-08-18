@@ -25,7 +25,7 @@ export default function Reports() {
     ];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-6">
+        <div className="min-h-screen msa-gradient-soft p-6">
             <div className="max-w-5xl mx-auto space-y-6">
                 <div className="mb-8">
                     <h1 className="text-4xl font-bold text-gray-900">Rapports</h1>
@@ -39,7 +39,7 @@ export default function Reports() {
                             <Card key={index} className="border-0 shadow-lg">
                                 <CardContent className="p-6">
                                     <div className="flex items-center gap-3 mb-4">
-                                        <div className="rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 p-3 text-white">
+                                        <div className="rounded-xl msa-gradient p-3 text-white">
                                             <Icon className="h-5 w-5" />
                                         </div>
                                         <h2 className="text-lg font-semibold text-gray-900">{item.title}</h2>

@@ -32,7 +32,7 @@ export default function ActionModal({ isOpen, onClose, onAction, currentState })
             key: 'intervention_start',
             label: 'Intervention Extérieure',
             icon: MapPin,
-            color: 'from-blue-500 to-purple-500'
+            color: 'from-[#1458B8] to-[#0D3B7A]'
         });
     } else {
         actions.push({
@@ -55,7 +55,7 @@ export default function ActionModal({ isOpen, onClose, onAction, currentState })
             <DialogContent className="max-w-md">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <Clock className="w-5 h-5 text-blue-600" />
+                        <Clock className="w-5 h-5 text-[#1458B8]" />
                         Que souhaitez-vous faire ?
                     </DialogTitle>
                 </DialogHeader>
