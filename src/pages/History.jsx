@@ -24,7 +24,7 @@ export default function History() {
 
     const { data: attendances = [], isLoading } = useQuery({
         queryKey: ['allHistory'],
-        queryFn: () => supabaseClient.entities.Attendance.list('-created_at', 200)
+        queryFn: () => supabaseClient.entities.Attendance.list('-date', 200)
     });
 
     const getStatusBadge = (status) => {

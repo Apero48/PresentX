@@ -24,14 +24,14 @@ export default function Dashboard() {
         queryKey: ['todayAttendances'],
         queryFn: () => {
             const today = format(new Date(), 'yyyy-MM-dd');
-            return supabaseClient.entities.Attendance.filter({ date: today }, '-created_at');
+            return supabaseClient.entities.Attendance.filter({ date: today }, '-date');
         },
         refetchInterval: 5000 // Refresh every 5 seconds for real-time updates
     });
 
     const { data: allAttendances = [] } = useQuery({
         queryKey: ['allAttendances'],
-        queryFn: () => supabaseClient.entities.Attendance.list('-created_at', 100),
+        queryFn: () => supabaseClient.entities.Attendance.list('-date', 100),
         refetchInterval: 10000
     });
 

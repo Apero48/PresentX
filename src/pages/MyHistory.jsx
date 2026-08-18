@@ -26,7 +26,7 @@ export default function MyHistory() {
 
     const { data: myAttendances = [] } = useQuery({
         queryKey: ['myAttendances', employee?.id],
-        queryFn: () => employee ? supabaseClient.entities.Attendance.filter({ employee_id: employee.id }, '-created_at', 100) : [],
+        queryFn: () => employee ? supabaseClient.entities.Attendance.filter({ employee_id: employee.id }, '-date', 100) : [],
         enabled: !!employee
     });
 

@@ -23,7 +23,7 @@ export default function NotificationCenter({ user }) {
         queryKey: ['recentAttendances'],
         queryFn: () => {
             const today = format(new Date(), 'yyyy-MM-dd');
-            return supabaseClient.entities.Attendance.filter({ date: today }, '-created_at', 50);
+            return supabaseClient.entities.Attendance.filter({ date: today }, '-date', 50);
         },
         refetchInterval: 10000 // Refresh every 10 seconds
     });
