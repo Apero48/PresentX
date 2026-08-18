@@ -24,23 +24,8 @@ export default function QRScanner({ onScan, onError }) {
                 audio: false
             });
 
-            if (videoRef.current) {
-                const video = videoRef.current;
-                video.srcObject = stream;
-                video.muted = true;
-                video.autoplay = true;
-                video.playsInline = true;
-                video.setAttribute('playsinline', 'true');
-                video.setAttribute('webkit-playsinline', 'true');
-                streamRef.current = stream;
-                setIsScanning(true);
-                await video.play();
-                if (video.readyState >= HTMLMediaElement.HAVE_METADATA) {
-                    scanQRCode();
-                } else {
-                    video.onloadedmetadata = () => scanQRCode();
-                }
-            }
+            streamRef.current = stream;
+            setIsScanning(true);
         } catch (err) {
             const message = err?.message === 'CAMERA_UNSUPPORTED'
                 ? 'Ce navigateur ne permet pas l’accès à la caméra.'
@@ -105,6 +90,40 @@ export default function QRScanner({ onScan, onError }) {
 
         animationRef.current = requestAnimationFrame(scanQRCode);
     };
+
+    useEffect(() => {
+        if (!isScanning || !streamRef.current || !videoRef.current) return;
+
+        const video = videoRef.current;
+        video.srcObject = streamRef.current;
+        video.muted = true;
+        video.autoplay = true;
+        video.playsInline = true;
+        video.setAttribute('playsinline', 'true');
+        video.setAttribute('webkit-playsinline', 'true');
+
+        const startVideo = async () => {
+            try {
+                await video.play();
+                if (video.readyState >= HTMLMediaElement.HAVE_METADATA) {
+                    scanQRCode();
+                }
+            } catch (err) {
+                setError('La caméra est autorisée mais la vidéo ne démarre pas. Touchez à nouveau « Commencer le scan ».');
+                onError?.(err);
+            }
+        };
+
+        if (video.readyState >= HTMLMediaElement.HAVE_METADATA) {
+            startVideo();
+        } else {
+            video.onloadedmetadata = startVideo;
+        }
+
+        return () => {
+            video.onloadedmetadata = null;
+        };
+    }, [isScanning]);
 
     useEffect(() => {
         return () => {
