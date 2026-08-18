@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Camera, StopCircle, AlertCircle } from "lucide-react";
+import jsQR from "jsqr";
 
 export default function QRScanner({ onScan, onError }) {
     const [isScanning, setIsScanning] = useState(false);
@@ -14,19 +15,36 @@ export default function QRScanner({ onScan, onError }) {
     const startScanning = async () => {
         try {
             setError(null);
+            if (!navigator.mediaDevices?.getUserMedia) {
+                throw new Error('CAMERA_UNSUPPORTED');
+            }
+
             const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'environment' }
+                video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+                audio: false
             });
 
             if (videoRef.current) {
-                videoRef.current.srcObject = stream;
-                videoRef.current.play();
+                const video = videoRef.current;
+                video.srcObject = stream;
                 streamRef.current = stream;
                 setIsScanning(true);
-                scanQRCode();
+                await video.play();
+                if (video.readyState >= HTMLMediaElement.HAVE_METADATA) {
+                    scanQRCode();
+                } else {
+                    video.onloadedmetadata = () => scanQRCode();
+                }
             }
         } catch (err) {
-            setError("Impossible d'accéder à la caméra. Vérifiez les permissions.");
+            const message = err?.message === 'CAMERA_UNSUPPORTED'
+                ? 'Ce navigateur ne permet pas l’accès à la caméra.'
+                : err?.name === 'NotAllowedError'
+                    ? 'Autorisez la caméra dans le navigateur, puis réessayez.'
+                    : err?.name === 'NotFoundError'
+                        ? 'Aucune caméra n’a été trouvée sur cet appareil.'
+                        : "Impossible d'accéder à la caméra. Vérifiez les permissions et utilisez HTTPS.";
+            setError(message);
             onError?.(err);
         }
     };
@@ -54,20 +72,29 @@ export default function QRScanner({ onScan, onError }) {
             canvas.height = video.videoHeight;
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            // Use BarcodeDetector API if available
+            // Utiliser BarcodeDetector lorsqu’il est disponible, puis jsQR en fallback.
             if ('BarcodeDetector' in window) {
                 try {
                     const barcodeDetector = new window.BarcodeDetector({ formats: ['qr_code'] });
                     const barcodes = await barcodeDetector.detect(canvas);
-
                     if (barcodes.length > 0) {
                         onScan(barcodes[0].rawValue);
                         stopScanning();
                         return;
                     }
                 } catch (err) {
-                    console.error('Barcode detection error:', err);
+                    console.warn('BarcodeDetector indisponible, fallback jsQR utilisé.', err);
                 }
+            }
+
+            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            const qrCode = jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: 'attemptBoth'
+            });
+            if (qrCode?.data) {
+                onScan(qrCode.data);
+                stopScanning();
+                return;
             }
         }
 
@@ -94,11 +121,11 @@ export default function QRScanner({ onScan, onError }) {
                                 />
                                 <canvas ref={canvasRef} className="hidden" />
                                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                    <div className="w-64 h-64 border-4 border-blue-500 rounded-2xl animate-pulse">
-                                        <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-blue-500 rounded-tl-2xl"></div>
-                                        <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-blue-500 rounded-tr-2xl"></div>
-                                        <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-blue-500 rounded-bl-2xl"></div>
-                                        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-blue-500 rounded-br-2xl"></div>
+                                    <div className="w-64 h-64 border-4 border-[#1458B8] rounded-2xl animate-pulse">
+                                        <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-[#1458B8] rounded-tl-2xl"></div>
+                                        <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-[#1458B8] rounded-tr-2xl"></div>
+                                        <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-[#1458B8] rounded-bl-2xl"></div>
+                                        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-[#1458B8] rounded-br-2xl"></div>
                                     </div>
                                 </div>
                             </>

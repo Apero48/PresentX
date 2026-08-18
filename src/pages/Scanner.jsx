@@ -95,8 +95,20 @@ export default function Scanner() {
         setCurrentEmployee(employee);
 
         try {
-            const today = format(new Date(), 'yyyy-MM-dd');
-            const currentTime = format(new Date(), 'HH:mm');
+            const now = new Date();
+            const today = format(now, 'yyyy-MM-dd');
+            const currentTime = format(now, 'HH:mm');
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            const openingMinutes = 8 * 60;
+            const closingMinutes = 19 * 60;
+
+            if (currentMinutes < openingMinutes || currentMinutes > closingMinutes) {
+                toast.error('Pointage fermé', {
+                    description: 'Le pointage est disponible de 08:00 à 19:00.'
+                });
+                setIsProcessing(false);
+                return;
+            }
 
             const todayAttendance = await getTodayAttendanceForEmployee(employee.id);
 
@@ -115,15 +127,8 @@ export default function Scanner() {
                     status = 'late';
                 }
 
-                await createAttendanceMutation.mutateAsync({
-                    employee_id: employee.id,
-                    employee_name: employee.full_name,
-                    date: today,
-                    check_in: currentTime,
-                    status: status,
-                    interventions: []
-                });
-
+                // L’Edge Function est la seule source d’écriture pour éviter
+                // les doublons créés par un insert frontend + backend.
                 await callAttendanceEdgeFunction({
                     action: 'create-attendance',
                     payload: {
@@ -163,7 +168,13 @@ export default function Scanner() {
 
     const handleAction = async (actionKey) => {
         setShowActionModal(false);
-        const currentTime = format(new Date(), 'HH:mm');
+            const now = new Date();
+            const currentTime = format(now, 'HH:mm');
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            if (currentMinutes < 8 * 60 || currentMinutes > 19 * 60) {
+                toast.error('Pointage fermé', { description: 'Le pointage est disponible de 08:00 à 19:00.' });
+                return;
+            }
 
         if (actionKey === 'lunch_start') {
             await updateAttendanceMutation.mutateAsync({
