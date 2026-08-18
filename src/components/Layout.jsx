@@ -61,11 +61,11 @@ export default function Layout({ children, currentPageName }) {
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="flex justify-between items-center h-16">
                             <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-xl msa-gradient shadow-lg overflow-hidden">
+                                <div className="w-28 h-12 rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden p-1">
                                     <img
                                         src="/assets/msa-inter-logo.png"
                                         alt="MSA INTER"
-                                        className="w-full h-full object-cover"
+                                        className="w-full h-full object-contain"
                                     />
                                 </div>
                                 <div>
@@ -107,7 +107,7 @@ export default function Layout({ children, currentPageName }) {
                                     <div className={`
                     p-3 rounded-2xl transition-all duration-300
                     ${isActive
-                                            ? 'msa-gradient shadow-lg shadow-blue-500/50'
+                                            ? 'msa-gradient shadow-lg shadow-[#1458B8]/30'
                                             : 'bg-transparent group-hover:bg-gray-100'
                                         }
                   `}>

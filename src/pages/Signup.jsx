@@ -196,9 +196,9 @@ export default function Signup() {
                                 </Link>
                             </div>
 
-                            <div className="mt-6 p-4 msa-gradient-soft rounded-xl border border-purple-100">
+                            <div className="mt-6 p-4 msa-gradient-soft rounded-xl border border-[#C51A1F]/20">
                                 <p className="text-xs text-gray-600 text-center">
-                                    En vous inscrivant, vous rejoignez l'équipe PresenceX
+                                    En vous inscrivant, vous rejoignez l'équipe MSA INTER
                                 </p>
                             </div>
                         </CardContent>
