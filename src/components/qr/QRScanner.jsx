@@ -27,6 +27,11 @@ export default function QRScanner({ onScan, onError }) {
             if (videoRef.current) {
                 const video = videoRef.current;
                 video.srcObject = stream;
+                video.muted = true;
+                video.autoplay = true;
+                video.playsInline = true;
+                video.setAttribute('playsinline', 'true');
+                video.setAttribute('webkit-playsinline', 'true');
                 streamRef.current = stream;
                 setIsScanning(true);
                 await video.play();
@@ -116,10 +121,12 @@ export default function QRScanner({ onScan, onError }) {
                             <>
                                 <video
                                     ref={videoRef}
-                                    className="w-full h-full object-cover"
+                                    className="absolute inset-0 w-full h-full object-cover"
+                                    autoPlay
+                                    muted
                                     playsInline
                                 />
-                                <canvas ref={canvasRef} className="hidden" />
+                                    <canvas ref={canvasRef} className="hidden" />
                                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                     <div className="w-64 h-64 border-4 border-[#1458B8] rounded-2xl animate-pulse">
                                         <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-[#1458B8] rounded-tl-2xl"></div>
