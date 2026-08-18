@@ -33,8 +33,7 @@ AS $$
     FROM public.employees AS e
     WHERE e.user_id = auth.uid()
       AND e.role = 'admin'
-  )
-  OR lower(coalesce(auth.jwt() ->> 'email', '')) = 'admin@presencex.com';
+  );
 $$;
 
 REVOKE ALL ON FUNCTION public.is_admin() FROM PUBLIC;
@@ -74,19 +73,19 @@ BEGIN
 END;
 $$;
 
--- Employees : chacun voit et modifie son propre profil ; l’admin gère tout.
+-- Employees : chacun voit son propre profil ; seul l’admin gère les profils.
 CREATE POLICY employees_select_own_or_admin
   ON public.employees FOR SELECT TO authenticated
   USING (user_id = auth.uid() OR public.is_admin());
 
-CREATE POLICY employees_insert_own_or_admin
+CREATE POLICY employees_insert_admin
   ON public.employees FOR INSERT TO authenticated
-  WITH CHECK (user_id = auth.uid() OR public.is_admin());
+  WITH CHECK (public.is_admin());
 
-CREATE POLICY employees_update_own_or_admin
+CREATE POLICY employees_update_admin
   ON public.employees FOR UPDATE TO authenticated
-  USING (user_id = auth.uid() OR public.is_admin())
-  WITH CHECK (user_id = auth.uid() OR public.is_admin());
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
 
 CREATE POLICY employees_delete_admin
   ON public.employees FOR DELETE TO authenticated
@@ -100,23 +99,14 @@ CREATE POLICY attendances_select_own_or_admin
     OR employee_id IN (SELECT id FROM public.employees WHERE user_id = auth.uid())
   );
 
-CREATE POLICY attendances_insert_own_or_admin
+CREATE POLICY attendances_insert_admin
   ON public.attendances FOR INSERT TO authenticated
-  WITH CHECK (
-    public.is_admin()
-    OR employee_id IN (SELECT id FROM public.employees WHERE user_id = auth.uid())
-  );
+  WITH CHECK (public.is_admin());
 
-CREATE POLICY attendances_update_own_or_admin
+CREATE POLICY attendances_update_admin
   ON public.attendances FOR UPDATE TO authenticated
-  USING (
-    public.is_admin()
-    OR employee_id IN (SELECT id FROM public.employees WHERE user_id = auth.uid())
-  )
-  WITH CHECK (
-    public.is_admin()
-    OR employee_id IN (SELECT id FROM public.employees WHERE user_id = auth.uid())
-  );
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
 
 CREATE POLICY attendances_delete_admin
   ON public.attendances FOR DELETE TO authenticated

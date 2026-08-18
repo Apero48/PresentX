@@ -11,7 +11,7 @@ import EmployeeSelector from '../components/scanner/EmployeeSelector';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
-import { createAttendance, updateAttendance, getTodayAttendanceForEmployee, calculateHoursWorked } from '@/services/attendanceService';
+import { getTodayAttendanceForEmployee, calculateHoursWorked } from '@/services/attendanceService';
 import { callAttendanceEdgeFunction } from '@/services/attendanceEdgeFunctionService';
 
 export default function Scanner() {
@@ -63,16 +63,11 @@ export default function Scanner() {
     const workedHours = currentAttendance?.hours_worked ? `${Number(currentAttendance.hours_worked).toFixed(1)}h` : '0h';
     const dayStatus = currentAttendance?.status === 'late' ? 'En retard' : currentAttendance?.status === 'present' ? 'Présent' : 'Pas encore pointé';
 
-    const createAttendanceMutation = useMutation({
-        mutationFn: (data) => createAttendance(data),
-        onSuccess: () => {
-            queryClient.invalidateQueries(['attendances']);
-            queryClient.invalidateQueries(['todayAttendances']);
-        }
-    });
-
     const updateAttendanceMutation = useMutation({
-        mutationFn: ({ id, data }) => updateAttendance(id, data),
+        mutationFn: ({ id, actionKey, data }) => callAttendanceEdgeFunction({
+            action: 'update-attendance',
+            payload: { id, actionKey, data }
+        }),
         onSuccess: () => {
             queryClient.invalidateQueries(['attendances']);
             queryClient.invalidateQueries(['todayAttendances']);
@@ -80,13 +75,20 @@ export default function Scanner() {
     });
 
     const handleScan = async (qrData) => {
-        if (qrData === "ATTENDANCE-CHECK-IN") {
-            setShowEmployeeSelector(true);
-            setIsProcessing(false);
-        } else {
+        if (qrData !== "ATTENDANCE-CHECK-IN") {
             toast.error("❌ QR Code non valide");
             setIsProcessing(false);
+            return;
         }
+
+        if (employeeProfile?.role === 'admin') {
+            setShowEmployeeSelector(true);
+        } else if (employeeProfile) {
+            await handleEmployeeSelect(employeeProfile);
+        } else {
+            toast.error('Profil employé introuvable');
+        }
+        setIsProcessing(false);
     };
 
     const handleEmployeeSelect = async (employee) => {
@@ -179,7 +181,8 @@ export default function Scanner() {
         if (actionKey === 'lunch_start') {
             await updateAttendanceMutation.mutateAsync({
                 id: currentAttendance.id,
-                data: { ...currentAttendance, lunch_start: currentTime }
+                actionKey: 'lunch_start',
+                data: { lunch_start: currentTime }
             });
             setSuccessMessage(`☕ Bonne pause déjeuner!\nDébut: ${currentTime}`);
             setShowSuccess(true);
@@ -188,7 +191,8 @@ export default function Scanner() {
         } else if (actionKey === 'lunch_end') {
             await updateAttendanceMutation.mutateAsync({
                 id: currentAttendance.id,
-                data: { ...currentAttendance, lunch_end: currentTime }
+                actionKey: 'lunch_end',
+                data: { lunch_end: currentTime }
             });
             setSuccessMessage(`🍽️ Bon retour!\nReprise: ${currentTime}`);
             setShowSuccess(true);
@@ -206,11 +210,8 @@ export default function Scanner() {
 
             await updateAttendanceMutation.mutateAsync({
                 id: currentAttendance.id,
-                data: {
-                    ...currentAttendance,
-                    check_out: currentTime,
-                    hours_worked: hoursWorked.toFixed(2)
-                }
+                actionKey: 'check_out',
+                data: { check_out: currentTime, hours_worked: hoursWorked.toFixed(2) }
             });
 
             setSuccessMessage(`👋 Bonne soirée ${currentEmployee.full_name}!\nDépart: ${currentTime}\nHeures: ${hoursWorked.toFixed(1)}h`);
@@ -237,7 +238,8 @@ export default function Scanner() {
 
             await updateAttendanceMutation.mutateAsync({
                 id: currentAttendance.id,
-                data: { ...currentAttendance, interventions }
+                actionKey: 'interventions',
+                data: { interventions }
             });
 
             setSuccessMessage(`🚗 Intervention enregistrée\nDépart: ${currentTime}\n${data.location}`);
@@ -254,7 +256,8 @@ export default function Scanner() {
 
             await updateAttendanceMutation.mutateAsync({
                 id: currentAttendance.id,
-                data: { ...currentAttendance, interventions }
+                actionKey: 'interventions',
+                data: { interventions }
             });
 
             setSuccessMessage(`✅ Retour d'intervention\nRetour: ${currentTime}`);
@@ -365,12 +368,14 @@ export default function Scanner() {
                     isReturn={interventionType === 'end'}
                 />
 
-                <EmployeeSelector
-                    isOpen={showEmployeeSelector}
-                    onClose={() => setShowEmployeeSelector(false)}
-                    onSelect={handleEmployeeSelect}
-                    employees={employees}
-                />
+                {employeeProfile?.role === 'admin' && (
+                    <EmployeeSelector
+                        isOpen={showEmployeeSelector}
+                        onClose={() => setShowEmployeeSelector(false)}
+                        onSelect={handleEmployeeSelect}
+                        employees={employees}
+                    />
+                )}
             </div>
         </div>
     );
