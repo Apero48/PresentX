@@ -15,6 +15,12 @@ ALTER TABLE public.employees
 ALTER TABLE public.employees
   ADD CONSTRAINT employees_role_check CHECK (role IN ('admin', 'employee'));
 
+-- Bootstrap contrôlé du premier administrateur.
+-- Remplacez cette adresse par celle du responsable du client avant la mise en production.
+UPDATE public.employees
+SET role = 'admin'
+WHERE lower(email) = 'admin@presencex.com';
+
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS boolean
 LANGUAGE sql

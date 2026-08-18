@@ -9,10 +9,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 const getRoleFromUser = (user, employee) => {
     const email = (user?.email || employee?.email || '').toLowerCase()
-    if (email === 'admin@presencex.com') {
-        return 'admin'
-    }
-
     const explicitRole = (
         employee?.role ||
         user?.role ||
