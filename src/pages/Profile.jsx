@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Mail, Phone, Briefcase, Clock, LogOut, Shield, QrCode } from "lucide-react";
 import { toast } from "sonner";
+import { getCachedOfflineEmployee } from '@/services/offlineAttendanceStore';
 
 export default function Profile() {
     const [user, setUser] = useState(null);
@@ -20,12 +21,24 @@ export default function Profile() {
 
     useEffect(() => {
         const fetchData = async () => {
-            const currentUser = await supabaseClient.auth.me();
-            setUser(currentUser);
+            try {
+                const currentUser = await supabaseClient.auth.me();
+                setUser(currentUser);
 
-            const employees = await supabaseClient.entities.Employee.list();
-            const emp = employees.find(e => e.email === currentUser.email);
-            setEmployee(emp);
+                let emp = null;
+                try {
+                    const employees = await supabaseClient.entities.Employee.filter({ user_id: currentUser.id });
+                    emp = employees?.[0] || null;
+                } catch {
+                    emp = getCachedOfflineEmployee();
+                }
+                setEmployee(emp || getCachedOfflineEmployee());
+            } catch (error) {
+                console.error('Erreur chargement profil:', error);
+                toast.error('Profil indisponible hors connexion', {
+                    description: 'Reconnectez-vous au réseau pour actualiser vos informations.'
+                });
+            }
         };
         fetchData();
     }, []);

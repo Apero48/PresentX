@@ -13,6 +13,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import { getTodayAttendanceForEmployee, calculateHoursWorked } from '@/services/attendanceService';
 import { callAttendanceEdgeFunction } from '@/services/attendanceEdgeFunctionService';
+import {
+    cacheOfflineSession,
+    getCachedOfflineEmployee,
+    getOfflineAttendanceForToday,
+    enqueueOfflineAttendance,
+    flushOfflineAttendanceQueue,
+} from '@/services/offlineAttendanceStore';
 
 export default function Scanner() {
     const [scanResult, setScanResult] = useState(null);
@@ -27,6 +34,7 @@ export default function Scanner() {
     const [currentAttendance, setCurrentAttendance] = useState(null);
     const [employeeProfile, setEmployeeProfile] = useState(null);
     const [employeeLoading, setEmployeeLoading] = useState(true);
+    const [isOnline, setIsOnline] = useState(() => typeof navigator === 'undefined' ? true : navigator.onLine);
 
     const queryClient = useQueryClient();
 
@@ -39,14 +47,25 @@ export default function Scanner() {
         const loadEmployeeData = async () => {
             try {
                 const currentUser = await supabaseClient.auth.me();
-                const employeeRecords = await supabaseClient.entities.Employee.filter({ user_id: currentUser.id });
-                const employee = employeeRecords?.[0] || null;
+                let employee = null;
+                try {
+                    const employeeRecords = await supabaseClient.entities.Employee.filter({ user_id: currentUser.id });
+                    employee = employeeRecords?.[0] || null;
+                } catch {
+                    employee = getCachedOfflineEmployee();
+                }
+                employee = employee || getCachedOfflineEmployee();
                 setEmployeeProfile(employee);
 
                 if (employee) {
+                    cacheOfflineSession(currentUser, employee);
                     const today = format(new Date(), 'yyyy-MM-dd');
-                    const attendances = await supabaseClient.entities.Attendance.filter({ employee_id: employee.id, date: today });
-                    setCurrentAttendance(attendances?.[0] || null);
+                    try {
+                        const attendances = await supabaseClient.entities.Attendance.filter({ employee_id: employee.id, date: today });
+                        setCurrentAttendance(attendances?.[0] || null);
+                    } catch {
+                        setCurrentAttendance(getOfflineAttendanceForToday(employee.id, today));
+                    }
                 }
             } catch (error) {
                 console.error('Erreur chargement employé:', error);
@@ -56,7 +75,33 @@ export default function Scanner() {
         };
 
         loadEmployeeData();
-    }, []);
+
+        const syncQueuedScans = async () => {
+            try {
+                const result = await flushOfflineAttendanceQueue(callAttendanceEdgeFunction);
+                if (result.synced > 0) {
+                    toast.success(`${result.synced} pointage(s) hors connexion synchronisé(s)`);
+                    queryClient.invalidateQueries(['attendances']);
+                    queryClient.invalidateQueries(['todayAttendances']);
+                }
+            } catch (error) {
+                console.warn('Synchronisation hors connexion impossible:', error);
+            }
+        };
+
+        const handleOnline = () => {
+            setIsOnline(true);
+            syncQueuedScans();
+        };
+        const handleOffline = () => setIsOnline(false);
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+        syncQueuedScans();
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, [queryClient]);
 
     const arrivalTime = currentAttendance?.check_in || '--:--';
     const departureTime = currentAttendance?.check_out || '--:--';
@@ -112,7 +157,37 @@ export default function Scanner() {
                 return;
             }
 
-            const todayAttendance = await getTodayAttendanceForEmployee(employee.id);
+            let todayAttendance = null;
+            try {
+                todayAttendance = await getTodayAttendanceForEmployee(employee.id);
+            } catch (error) {
+                if (navigator.onLine) throw error;
+                todayAttendance = getOfflineAttendanceForToday(employee.id, today);
+            }
+
+            if (!todayAttendance && !navigator.onLine) {
+                const startTime = employee.start_time || '08:00';
+                const [startHour, startMinute] = startTime.split(':').map(Number);
+                const [currentHour, currentMinute] = currentTime.split(':').map(Number);
+                const status = (currentHour * 60 + currentMinute) > (startHour * 60 + startMinute + 15) ? 'late' : 'present';
+                const queuedAttendance = enqueueOfflineAttendance({
+                    employee_id: employee.id,
+                    employee_name: employee.full_name,
+                    date: today,
+                    check_in: currentTime,
+                    attendance_status: status,
+                    interventions: [],
+                });
+                setCurrentAttendance({ ...queuedAttendance, check_in: currentTime, status });
+                setSuccessMessage(`✅ Pointage enregistré hors connexion\\nArrivée: ${currentTime}\\nSynchronisation automatique dès le retour du réseau.`);
+                setShowSuccess(true);
+                toast.success('Pointage enregistré hors connexion', {
+                    description: 'Il sera envoyé automatiquement dès que la connexion revient.'
+                });
+                setTimeout(() => setShowSuccess(false), 3000);
+                setIsProcessing(false);
+                return;
+            }
 
             if (!todayAttendance) {
                 // Premier scan = Arrivée
@@ -318,6 +393,9 @@ export default function Scanner() {
 
                 <Card className="border-0 shadow-2xl bg-white">
                     <CardContent className="p-6">
+                        <div className={`mb-4 rounded-2xl px-4 py-3 text-sm ${isOnline ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'}`}>
+                            {isOnline ? 'Connexion active — les pointages sont envoyés immédiatement.' : 'Hors connexion — les scans sont enregistrés sur cet appareil et seront synchronisés automatiquement.'}
+                        </div>
                         <div className="flex items-center justify-between mb-4">
                             <div>
                                 <p className="text-sm text-slate-500">QR Code pointage</p>

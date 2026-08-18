@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
+import { getCachedOfflineSession, getCachedOfflineEmployee, cacheOfflineSession } from '@/services/offlineAttendanceStore';
+
 // Configuration Supabase
 // IMPORTANT: Remplacez ces valeurs par vos propres credentials Supabase
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'YOUR_SUPABASE_URL'
@@ -34,27 +36,31 @@ class SupabaseClient {
         me: async () => {
             const { data: { user }, error } = await supabase.auth.getUser()
             if (error || !user) {
+                const cached = getCachedOfflineSession()
+                if (cached) return cached
                 throw new Error('Not authenticated')
             }
 
-            // Récupérer les infos de l'employé associé
+            // Récupérer les infos de l'employé associé, puis utiliser le cache hors connexion.
             const { data: employee } = await supabase
                 .from('employees')
                 .select('*')
                 .eq('user_id', user.id)
                 .single()
 
-            const role = getRoleFromUser(user, employee)
-
-            return {
+            const cachedEmployee = employee || getCachedOfflineEmployee()
+            const role = getRoleFromUser(user, cachedEmployee)
+            const sessionUser = {
                 id: user.id,
                 email: user.email,
-                full_name: employee?.full_name || user.email?.split('@')[0],
+                full_name: cachedEmployee?.full_name || user.email?.split('@')[0],
                 role,
-                employee_id: employee?.id,
-                department: employee?.department,
-                position: employee?.position
+                employee_id: cachedEmployee?.id,
+                department: cachedEmployee?.department,
+                position: cachedEmployee?.position
             }
+            if (cachedEmployee) cacheOfflineSession(sessionUser, cachedEmployee)
+            return sessionUser
         },
 
         login: async (email, password) => {

@@ -7,6 +7,14 @@ import './index.css'
 import { Toaster } from 'sonner'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch((error) => {
+            console.warn('Service worker indisponible:', error)
+        })
+    })
+}
+
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {

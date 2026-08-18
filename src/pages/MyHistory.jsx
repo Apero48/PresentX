@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, TrendingUp } from "lucide-react";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { fr } from "date-fns/locale";
+import { getCachedOfflineEmployee } from '@/services/offlineAttendanceStore';
 
 export default function MyHistory() {
     const [user, setUser] = useState(null);
@@ -16,9 +17,12 @@ export default function MyHistory() {
             const currentUser = await supabaseClient.auth.me();
             setUser(currentUser);
 
-            const employees = await supabaseClient.entities.Employee.filter({ email: currentUser.email });
-            if (employees.length > 0) {
-                setEmployee(employees[0]);
+            try {
+                const employees = await supabaseClient.entities.Employee.filter({ user_id: currentUser.id });
+                if (employees.length > 0) setEmployee(employees[0]);
+                else setEmployee(getCachedOfflineEmployee());
+            } catch {
+                setEmployee(getCachedOfflineEmployee());
             }
         };
         fetchUser();
