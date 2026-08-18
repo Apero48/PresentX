@@ -24,7 +24,7 @@ export default function History() {
 
     const { data: attendances = [], isLoading } = useQuery({
         queryKey: ['allHistory'],
-        queryFn: () => supabaseClient.entities.Attendance.list('-created_date', 200)
+        queryFn: () => supabaseClient.entities.Attendance.list('-created_at', 200)
     });
 
     const getStatusBadge = (status) => {
@@ -50,7 +50,7 @@ export default function History() {
             att.employee_name,
             att.check_in,
             att.check_out || '-',
-            att.hours_worked?.toFixed(2) || '-',
+            Number.isFinite(Number(att.hours_worked)) ? Number(att.hours_worked).toFixed(2) : '-',
             getStatusBadge(att.status).label
         ]);
 
@@ -143,7 +143,7 @@ export default function History() {
                                                     <TableCell>{attendance.check_in}</TableCell>
                                                     <TableCell>{attendance.check_out || '-'}</TableCell>
                                                     <TableCell>
-                                                        {attendance.hours_worked ? `${attendance.hours_worked.toFixed(1)}h` : '-'}
+                                                        {Number.isFinite(Number(attendance.hours_worked)) ? `${Number(attendance.hours_worked).toFixed(1)}h` : '-'}
                                                     </TableCell>
                                                     <TableCell>
                                                         <Badge className={`${statusInfo.className} border`}>

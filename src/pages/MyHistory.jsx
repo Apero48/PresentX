@@ -26,7 +26,7 @@ export default function MyHistory() {
 
     const { data: myAttendances = [] } = useQuery({
         queryKey: ['myAttendances', employee?.id],
-        queryFn: () => employee ? supabaseClient.entities.Attendance.filter({ employee_id: employee.id }, '-created_date', 100) : [],
+        queryFn: () => employee ? supabaseClient.entities.Attendance.filter({ employee_id: employee.id }, '-created_at', 100) : [],
         enabled: !!employee
     });
 
@@ -45,7 +45,7 @@ export default function MyHistory() {
         return attDate >= startOfMonth(new Date()) && attDate <= endOfMonth(new Date());
     });
 
-    const totalHours = myAttendances.reduce((sum, att) => sum + (att.hours_worked || 0), 0);
+    const totalHours = myAttendances.reduce((sum, att) => sum + (Number(att.hours_worked) || 0), 0);
     const lateCount = myAttendances.filter(att => att.status === 'late').length;
 
     if (!employee) {

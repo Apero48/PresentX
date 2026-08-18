@@ -23,7 +23,7 @@ export default function NotificationCenter({ user }) {
         queryKey: ['recentAttendances'],
         queryFn: () => {
             const today = format(new Date(), 'yyyy-MM-dd');
-            return supabaseClient.entities.Attendance.filter({ date: today }, '-created_date', 50);
+            return supabaseClient.entities.Attendance.filter({ date: today }, '-created_at', 50);
         },
         refetchInterval: 10000 // Refresh every 10 seconds
     });
@@ -43,13 +43,14 @@ export default function NotificationCenter({ user }) {
 
         // Check for late arrivals
         recentAttendances.forEach(attendance => {
-            if (attendance.status === 'late' && new Date(attendance.created_date) > lastCheck) {
+            const attendanceTimestamp = attendance.created_at || attendance.created_date;
+            if (attendance.status === 'late' && attendanceTimestamp && new Date(attendanceTimestamp) > lastCheck) {
                 newNotifications.push({
                     id: `late-${attendance.id}`,
                     type: 'late',
                     title: 'Retard détecté',
                     message: `${attendance.employee_name} est arrivé en retard à ${attendance.check_in}`,
-                    timestamp: attendance.created_date,
+                    timestamp: attendanceTimestamp,
                     icon: Clock,
                     color: 'orange'
                 });
