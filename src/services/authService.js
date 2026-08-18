@@ -2,11 +2,6 @@ import { supabaseClient } from '@/api/supabaseClient';
 import { logError } from '@/lib/logger';
 
 export const normalizeRole = (record = {}) => {
-    const email = (record?.email || '').toLowerCase();
-    if (email === 'admin@presencex.com') {
-        return 'admin';
-    }
-
     const explicitRole = (
         record?.role ||
         record?.user_role ||
