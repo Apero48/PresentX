@@ -3,7 +3,7 @@ import { logError } from '@/lib/logger';
 
 export const normalizeRole = (record = {}) => {
     const email = (record?.email || '').toLowerCase();
-    if (email === 'admin@presencex.com' || email.includes('admin')) {
+    if (email === 'admin@presencex.com') {
         return 'admin';
     }
 
