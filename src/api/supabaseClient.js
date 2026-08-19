@@ -133,7 +133,7 @@ class SupabaseClient {
     // Entity methods - Employees
     entities = {
         Employee: {
-            list: async (orderBy = 'created_at', limit = 1000) => {
+            list: async (orderBy = 'full_name', limit = 1000) => {
                 const order = orderBy.startsWith('-')
                     ? { column: orderBy.slice(1), ascending: false }
                     : { column: orderBy, ascending: true }
@@ -148,7 +148,7 @@ class SupabaseClient {
                 return data || []
             },
 
-            filter: async (filters, orderBy = 'created_at', limit = 1000) => {
+            filter: async (filters, orderBy = 'full_name', limit = 1000) => {
                 const order = orderBy.startsWith('-')
                     ? { column: orderBy.slice(1), ascending: false }
                     : { column: orderBy, ascending: true }

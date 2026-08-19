@@ -38,7 +38,7 @@ export default function Employees() {
 
     const { data: employees = [], isLoading } = useQuery({
         queryKey: ['employees'],
-        queryFn: () => supabaseClient.entities.Employee.list('-created_at')
+        queryFn: () => supabaseClient.entities.Employee.list('-full_name')
     });
 
     const createMutation = useMutation({
