@@ -73,9 +73,16 @@ serve(async (req) => {
     if (action === 'create-attendance') {
       const employeeId = payload.employee_id || actor.id;
       if (!isAdmin && employeeId !== actor.id) return json({ error: 'Employees can only create their own attendance' }, 403);
-      if (nowMinutes < 8 * 60 || nowMinutes > 19 * 60) return json({ error: 'Attendance is closed outside 08:00–19:00' }, 422);
-
       const date = payload.date || nowDate;
+      const isOfflineSync = payload.offline === true;
+      if (!isOfflineSync && (nowMinutes < 8 * 60 || nowMinutes > 19 * 60)) {
+        return json({ error: 'Attendance is closed outside 08:00–19:00' }, 422);
+      }
+      const checkInTime = isOfflineSync ? String(payload.check_in || '') : nowTime;
+      const checkInMinutes = timeToMinutes(checkInTime);
+      if (isOfflineSync && (Number.isNaN(checkInMinutes) || checkInMinutes < 8 * 60 || checkInMinutes > 19 * 60)) {
+        return json({ error: 'Offline check-in time is outside 08:00–19:00' }, 422);
+      }
       const { data: existing } = await adminClient.from('attendances')
         .select('id').eq('employee_id', employeeId).eq('date', date).maybeSingle();
       if (existing) return json({ error: 'Attendance already exists for this employee today' }, 409);
@@ -85,12 +92,12 @@ serve(async (req) => {
       if (!employee || employee.is_active === false) return json({ error: 'Employee not found or inactive' }, 404);
 
       const startMinutes = timeToMinutes(employee.start_time || '08:00');
-      const status = nowMinutes > startMinutes + 15 ? 'late' : 'present';
+      const status = checkInMinutes > startMinutes + 15 ? 'late' : 'present';
       const { data, error } = await adminClient.from('attendances').insert({
         employee_id: employeeId,
         employee_name: employee.full_name,
         date,
-        check_in: nowTime,
+        check_in: checkInTime,
         status,
         interventions: [],
       }).select().single();

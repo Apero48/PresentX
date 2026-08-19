@@ -86,6 +86,7 @@ export const flushOfflineAttendanceQueue = async (syncAttendance) => {
                 check_in: item.check_in,
                 status: item.attendance_status,
                 interventions: item.interventions || [],
+                offline: true,
             }});
             synced += 1;
         } catch (error) {

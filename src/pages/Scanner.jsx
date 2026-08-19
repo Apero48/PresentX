@@ -94,12 +94,19 @@ export default function Scanner() {
             syncQueuedScans();
         };
         const handleOffline = () => setIsOnline(false);
+        const handleVisibility = () => {
+            if (document.visibilityState === 'visible') syncQueuedScans();
+        };
+        const retryTimer = window.setInterval(syncQueuedScans, 15000);
         window.addEventListener('online', handleOnline);
         window.addEventListener('offline', handleOffline);
+        document.addEventListener('visibilitychange', handleVisibility);
         syncQueuedScans();
         return () => {
+            window.clearInterval(retryTimer);
             window.removeEventListener('online', handleOnline);
             window.removeEventListener('offline', handleOffline);
+            document.removeEventListener('visibilitychange', handleVisibility);
         };
     }, [queryClient]);
 
