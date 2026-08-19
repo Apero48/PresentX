@@ -121,8 +121,16 @@ export default function Scanner() {
             payload: { id, actionKey, data }
         }),
         onSuccess: () => {
-            queryClient.invalidateQueries(['attendances']);
-            queryClient.invalidateQueries(['todayAttendances']);
+            queryClient.invalidateQueries({ queryKey: ['attendances'] });
+            queryClient.invalidateQueries({ queryKey: ['todayAttendances'] });
+            queryClient.invalidateQueries({ queryKey: ['allAttendances'] });
+            queryClient.invalidateQueries({ queryKey: ['allHistory'] });
+            queryClient.invalidateQueries({ queryKey: ['recentAttendances'] });
+        },
+        onError: (error) => {
+            toast.error('Action non enregistrée', {
+                description: error?.message || 'Le serveur n’a pas pu mettre à jour le pointage.'
+            });
         }
     });
 
