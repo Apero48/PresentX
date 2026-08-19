@@ -44,12 +44,16 @@ export default function History() {
     });
 
     const exportToCSV = () => {
-        const headers = ['Date', 'Employé', 'Arrivée', 'Départ', 'Heures', 'Statut'];
+        const headers = ['Date', 'Employé', 'Arrivée', 'Départ', 'Pause', 'Interventions', 'Heures', 'Statut'];
         const rows = filteredAttendances.map(att => [
             att.date,
             att.employee_name,
             att.check_in,
             att.check_out || '-',
+            att.lunch_start ? `${att.lunch_start} → ${att.lunch_end || 'en cours'}` : '-',
+            Array.isArray(att.interventions) && att.interventions.length > 0
+                ? att.interventions.map(item => `${item.departure_time || '--:--'} → ${item.return_time || 'en cours'}${item.location ? ` (${item.location})` : ''}`).join(' | ')
+                : '-',
             Number.isFinite(Number(att.hours_worked)) ? Number(att.hours_worked).toFixed(2) : '-',
             getStatusBadge(att.status).label
         ]);
@@ -127,6 +131,8 @@ export default function History() {
                                             <TableHead>Employé</TableHead>
                                             <TableHead>Arrivée</TableHead>
                                             <TableHead>Départ</TableHead>
+                                            <TableHead>Pause</TableHead>
+                                            <TableHead>Interventions</TableHead>
                                             <TableHead>Heures</TableHead>
                                             <TableHead>Statut</TableHead>
                                         </TableRow>
@@ -142,6 +148,21 @@ export default function History() {
                                                     <TableCell>{attendance.employee_name}</TableCell>
                                                     <TableCell>{attendance.check_in}</TableCell>
                                                     <TableCell>{attendance.check_out || '-'}</TableCell>
+                                                    <TableCell className="whitespace-nowrap">
+                                                        {attendance.lunch_start ? `${attendance.lunch_start} → ${attendance.lunch_end || 'en cours'}` : '-'}
+                                                    </TableCell>
+                                                    <TableCell className="min-w-[240px]">
+                                                        {Array.isArray(attendance.interventions) && attendance.interventions.length > 0 ? (
+                                                            <div className="space-y-1">
+                                                                {attendance.interventions.map((intervention, index) => (
+                                                                    <div key={`${attendance.id}-history-intervention-${index}`} className="text-sm">
+                                                                        <span className="font-medium">{intervention.departure_time || '--:--'} → {intervention.return_time || 'en cours'}</span>
+                                                                        {intervention.location && <span className="text-slate-500"> · {intervention.location}</span>}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        ) : '-'}
+                                                    </TableCell>
                                                     <TableCell>
                                                         {Number.isFinite(Number(attendance.hours_worked)) ? `${Number(attendance.hours_worked).toFixed(1)}h` : '-'}
                                                     </TableCell>
