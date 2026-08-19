@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Mail, Phone, Briefcase, Clock, LogOut, Shield, QrCode } from "lucide-react";
 import { toast } from "sonner";
 import { getCachedOfflineEmployee } from '@/services/offlineAttendanceStore';
+import QRCode from 'qrcode';
 
 export default function Profile() {
     const [user, setUser] = useState(null);
@@ -47,11 +48,21 @@ export default function Profile() {
         supabaseClient.auth.logout();
     };
 
-    const generateUniversalQR = () => {
-        const universalQRCode = "ATTENDANCE-CHECK-IN";
-        const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(universalQRCode)}`;
+    const generateUniversalQR = async () => {
+        const universalQRCode = 'ATTENDANCE-CHECK-IN';
+        try {
+            // Generate locally so the company computer does not depend on api.qrserver.com.
+            const qrImageUrl = await QRCode.toDataURL(universalQRCode, {
+                width: 800,
+                margin: 4,
+                errorCorrectionLevel: 'H',
+                color: { dark: '#000000', light: '#FFFFFF' },
+            });
 
-        const printWindow = window.open('', '', 'width=900,height=900');
+            const printWindow = window.open('', '', 'width=900,height=900');
+            if (!printWindow) {
+                throw new Error('La fenêtre d’impression a été bloquée par le navigateur.');
+            }
 
         printWindow.document.write(`
       <html>
@@ -178,8 +189,14 @@ export default function Profile() {
       </html>
     `);
 
-        printWindow.document.close();
-        toast.success("✅ QR Code universel généré!");
+            printWindow.document.close();
+            toast.success('✅ QR Code universel généré localement!');
+        } catch (error) {
+            console.error('Erreur génération QR universel:', error);
+            toast.error('Impossible de générer le QR Code', {
+                description: error?.message || 'Réessayez après avoir autorisé les fenêtres popup.'
+            });
+        }
     };
 
     if (!user) {
