@@ -112,6 +112,29 @@ export default function MyHistory() {
                                                 <span className="text-slate-400">→</span>
                                                 <span className="text-lg font-semibold text-slate-900">{attendance.check_out || '--:--'}</span>
                                             </div>
+                                            {(attendance.lunch_start || (Array.isArray(attendance.interventions) && attendance.interventions.length > 0)) && (
+                                                <div className="mt-3 pt-3 border-t border-slate-100 text-sm space-y-2">
+                                                    {attendance.lunch_start && (
+                                                        <div className="flex items-center gap-2 text-slate-600">
+                                                            <Clock className="w-4 h-4 text-orange-400" />
+                                                            <span>Pause: {attendance.lunch_start} → {attendance.lunch_end || 'en cours'}</span>
+                                                        </div>
+                                                    )}
+                                                    {Array.isArray(attendance.interventions) && attendance.interventions.length > 0 && (
+                                                        <div className="space-y-1">
+                                                            {attendance.interventions.map((intervention, index) => (
+                                                                <div key={index} className="flex items-start gap-2 text-slate-600">
+                                                                    <TrendingUp className="w-4 h-4 text-blue-400 mt-0.5" />
+                                                                    <div>
+                                                                        <span>{intervention.departure_time || '--:--'} → {intervention.return_time || 'en cours'}</span>
+                                                                        {intervention.location && <span className="block text-xs text-slate-400">{intervention.location}</span>}
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="text-right">
                                             <div className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${statusInfo.className} border`}> {statusInfo.label} </div>
