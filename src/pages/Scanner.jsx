@@ -269,6 +269,7 @@ export default function Scanner() {
                 actionKey: 'lunch_start',
                 data: { lunch_start: currentTime }
             });
+            setCurrentAttendance((previous) => ({ ...previous, lunch_start: currentTime }));
             setSuccessMessage(`☕ Bonne pause déjeuner!\nDébut: ${currentTime}`);
             setShowSuccess(true);
             toast.success(`☕ Pause déjeuner - ${currentTime}`);
@@ -279,6 +280,7 @@ export default function Scanner() {
                 actionKey: 'lunch_end',
                 data: { lunch_end: currentTime }
             });
+            setCurrentAttendance((previous) => ({ ...previous, lunch_end: currentTime }));
             setSuccessMessage(`🍽️ Bon retour!\nReprise: ${currentTime}`);
             setShowSuccess(true);
             toast.success(`🍽️ Retour de pause - ${currentTime}`);
@@ -326,6 +328,7 @@ export default function Scanner() {
                 actionKey: 'interventions',
                 data: { interventions }
             });
+            setCurrentAttendance((previous) => ({ ...previous, interventions: [...interventions] }));
 
             setSuccessMessage(`🚗 Intervention enregistrée\nDépart: ${currentTime}\n${data.location}`);
             setShowSuccess(true);
@@ -344,6 +347,7 @@ export default function Scanner() {
                 actionKey: 'interventions',
                 data: { interventions }
             });
+            setCurrentAttendance((previous) => ({ ...previous, interventions: [...interventions] }));
 
             setSuccessMessage(`✅ Retour d'intervention\nRetour: ${currentTime}`);
             setShowSuccess(true);

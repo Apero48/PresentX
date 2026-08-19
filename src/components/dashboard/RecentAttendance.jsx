@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Clock } from "lucide-react";
+import { Clock, Coffee, Car } from "lucide-react";
 
 export default function RecentAttendance({ attendances }) {
     const getStatusBadge = (status) => {
@@ -43,6 +43,27 @@ export default function RecentAttendance({ attendances }) {
                                             </>
                                         )}
                                     </div>
+                                    {(attendance.lunch_start || attendance.lunch_end) && (
+                                        <div className="mt-1 flex items-center gap-2 text-xs text-amber-700">
+                                            <Coffee className="w-3 h-3" />
+                                            <span>
+                                                Pause : {attendance.lunch_start || '--:--'} → {attendance.lunch_end || 'en cours'}
+                                            </span>
+                                        </div>
+                                    )}
+                                    {Array.isArray(attendance.interventions) && attendance.interventions.length > 0 && (
+                                        <div className="mt-1 space-y-1 text-xs text-blue-700">
+                                            {attendance.interventions.map((intervention, index) => (
+                                                <div key={`${attendance.id}-intervention-${index}`} className="flex items-center gap-2">
+                                                    <Car className="w-3 h-3 shrink-0" />
+                                                    <span>
+                                                        Intervention : {intervention.departure_time || '--:--'} → {intervention.return_time || 'en cours'}
+                                                        {intervention.location ? ` · ${intervention.location}` : ''}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                                 <Badge className={`${statusInfo.className} border`}>
                                     {statusInfo.label}
