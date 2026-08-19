@@ -11,6 +11,9 @@ export default function QRScanner({ onScan, onError }) {
     const canvasRef = useRef(null);
     const streamRef = useRef(null);
     const animationRef = useRef(null);
+    const barcodeDetectorRef = useRef(null);
+    const decodingRef = useRef(false);
+    const hasScannedRef = useRef(false);
 
     const startScanning = async () => {
         try {
@@ -25,6 +28,15 @@ export default function QRScanner({ onScan, onError }) {
             });
 
             streamRef.current = stream;
+            hasScannedRef.current = false;
+            decodingRef.current = false;
+            if ('BarcodeDetector' in window) {
+                try {
+                    barcodeDetectorRef.current = new window.BarcodeDetector({ formats: ['qr_code'] });
+                } catch {
+                    barcodeDetectorRef.current = null;
+                }
+            }
             setIsScanning(true);
         } catch (err) {
             const message = err?.message === 'CAMERA_UNSUPPORTED'
@@ -46,34 +58,49 @@ export default function QRScanner({ onScan, onError }) {
         }
         if (animationRef.current) {
             cancelAnimationFrame(animationRef.current);
+            animationRef.current = null;
         }
+        decodingRef.current = false;
+        barcodeDetectorRef.current = null;
         setIsScanning(false);
     };
 
     const scanQRCode = async () => {
-        if (!videoRef.current || !canvasRef.current) return;
+        if (!videoRef.current || !canvasRef.current || hasScannedRef.current) return;
 
         const video = videoRef.current;
         const canvas = canvasRef.current;
-        const context = canvas.getContext('2d');
+        if (video.readyState < 2 || !video.videoWidth || !video.videoHeight) {
+            animationRef.current = requestAnimationFrame(scanQRCode);
+            return;
+        }
+        if (decodingRef.current) {
+            animationRef.current = requestAnimationFrame(scanQRCode);
+            return;
+        }
 
-        if (video.readyState === video.HAVE_ENOUGH_DATA) {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
+        decodingRef.current = true;
+        try {
+            // A smaller, stable frame is much faster and more reliable on iPhone Safari.
+            const maxWidth = 720;
+            const scale = Math.min(1, maxWidth / video.videoWidth);
+            canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
+            canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
+            const context = canvas.getContext('2d', { willReadFrequently: true });
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            // Utiliser BarcodeDetector lorsqu’il est disponible, puis jsQR en fallback.
-            if ('BarcodeDetector' in window) {
+            if (barcodeDetectorRef.current) {
                 try {
-                    const barcodeDetector = new window.BarcodeDetector({ formats: ['qr_code'] });
-                    const barcodes = await barcodeDetector.detect(canvas);
-                    if (barcodes.length > 0) {
+                    const barcodes = await barcodeDetectorRef.current.detect(canvas);
+                    if (barcodes.length > 0 && barcodes[0].rawValue) {
+                        hasScannedRef.current = true;
                         onScan(barcodes[0].rawValue);
                         stopScanning();
                         return;
                     }
                 } catch (err) {
                     console.warn('BarcodeDetector indisponible, fallback jsQR utilisé.', err);
+                    barcodeDetectorRef.current = null;
                 }
             }
 
@@ -82,10 +109,13 @@ export default function QRScanner({ onScan, onError }) {
                 inversionAttempts: 'attemptBoth'
             });
             if (qrCode?.data) {
+                hasScannedRef.current = true;
                 onScan(qrCode.data);
                 stopScanning();
                 return;
             }
+        } finally {
+            decodingRef.current = false;
         }
 
         animationRef.current = requestAnimationFrame(scanQRCode);
@@ -118,10 +148,12 @@ export default function QRScanner({ onScan, onError }) {
             startVideo();
         } else {
             video.onloadedmetadata = startVideo;
+        video.oncanplay = startVideo;
         }
 
         return () => {
             video.onloadedmetadata = null;
+            video.oncanplay = null;
         };
     }, [isScanning]);
 
