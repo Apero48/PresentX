@@ -51,7 +51,7 @@ export default function Profile() {
     const generateUniversalQR = async () => {
         const universalQRCode = 'ATTENDANCE-CHECK-IN';
         try {
-            // Generate locally so the company computer does not depend on api.qrserver.com.
+            // Generate locally so every company computer displays the same QR code.
             const qrImageUrl = await QRCode.toDataURL(universalQRCode, {
                 width: 800,
                 margin: 4,
