@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
 
     const { data: actor, error: actorError } = await adminClient
       .from('employees')
-      .select('id, user_id, email, role, is_active, start_time, end_time')
+      .select('id, user_id, email, role, is_active, start_time')
       .eq('user_id', user.id)
       .maybeSingle();
     if (actorError) return json({ error: actorError.message }, 500);
