@@ -35,7 +35,7 @@ const currentLocalDate = () => {
   return new Intl.DateTimeFormat('en-CA', { timeZone }).format(new Date());
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
 
