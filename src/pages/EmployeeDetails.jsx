@@ -39,6 +39,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import QRCode from 'qrcode';
 
 export default function EmployeeDetails() {
     const [employeeId, setEmployeeId] = useState(null);
@@ -93,7 +94,12 @@ export default function EmployeeDetails() {
     const handleGenerateQR = async () => {
         try {
             const qrData = employee.qr_code || `EMP-${employee.employee_code}`;
-            const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(qrData)}`;
+            const qrImageUrl = await QRCode.toDataURL(qrData, {
+                width: 800,
+                margin: 4,
+                errorCorrectionLevel: 'H',
+                color: { dark: '#000000', light: '#FFFFFF' },
+            });
 
             const link = document.createElement('a');
             link.href = qrImageUrl;
