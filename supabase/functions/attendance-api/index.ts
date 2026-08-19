@@ -64,21 +64,26 @@ serve(async (req) => {
 
     const isAdmin = actor.role === 'admin' || actor.role === 'super_admin';
     const { action, payload = {} } = await req.json();
+    const directActionKeys = ['lunch_start', 'lunch_end', 'intervention_start', 'intervention_end', 'interventions', 'check_out'];
+    const normalizedAction = directActionKeys.includes(action) ? 'update-attendance' : action;
+    const normalizedPayload = directActionKeys.includes(action)
+      ? { ...payload, actionKey: payload.actionKey || action }
+      : payload;
     const nowTime = currentLocalTime();
     const nowDate = currentLocalDate();
     const nowMinutes = timeToMinutes(nowTime);
 
-    if (action === 'health') return json({ status: 'ok', userId: user.id, role: actor.role });
+        if (normalizedAction === 'health') return json({ status: 'ok', userId: user.id, role: actor.role });
+    if (normalizedAction === 'create-attendance') {
+      const employeeId = normalizedPayload.employee_id || actor.id;
 
-    if (action === 'create-attendance') {
-      const employeeId = payload.employee_id || actor.id;
       if (!isAdmin && employeeId !== actor.id) return json({ error: 'Employees can only create their own attendance' }, 403);
-      const date = payload.date || nowDate;
-      const isOfflineSync = payload.offline === true;
+      const date = normalizedPayload.date || nowDate;
+      const isOfflineSync = normalizedPayload.offline === true;
       if (!isOfflineSync && (nowMinutes < 8 * 60 || nowMinutes > 19 * 60)) {
         return json({ error: 'Attendance is closed outside 08:00–19:00' }, 422);
       }
-      const checkInTime = isOfflineSync ? String(payload.check_in || '') : nowTime;
+      const checkInTime = isOfflineSync ? String(normalizedPayload.check_in || '') : nowTime;
       const checkInMinutes = timeToMinutes(checkInTime);
       if (isOfflineSync && (Number.isNaN(checkInMinutes) || checkInMinutes < 8 * 60 || checkInMinutes > 19 * 60)) {
         return json({ error: 'Offline check-in time is outside 08:00–19:00' }, 422);
@@ -105,8 +110,8 @@ serve(async (req) => {
       return json({ success: true, attendance: data });
     }
 
-    if (action === 'update-attendance') {
-      const attendanceId = payload.id;
+    if (normalizedAction === 'update-attendance') {
+      const attendanceId = normalizedPayload.id;
       if (!attendanceId) return json({ error: 'Attendance id is required' }, 400);
       const { data: existing, error: existingError } = await adminClient
         .from('attendances').select('*').eq('id', attendanceId).maybeSingle();
@@ -118,9 +123,10 @@ serve(async (req) => {
       let changes: Record<string, unknown> = {};
       if (isAdmin) {
         const allowed = ['check_in', 'check_out', 'lunch_start', 'lunch_end', 'hours_worked', 'status', 'interventions', 'employee_name', 'date'];
-        for (const key of allowed) if (Object.prototype.hasOwnProperty.call(payload.data || {}, key)) changes[key] = payload.data[key];
+                  for (const key of allowed) if (Object.prototype.hasOwnProperty.call(normalizedPayload.data || {}, key)) changes[key] = normalizedPayload.data[key];
+
       } else {
-        const actionKey = payload.actionKey;
+        const actionKey = normalizedPayload.actionKey;
         if (actionKey === 'lunch_start') changes = { lunch_start: nowTime };
         else if (actionKey === 'lunch_end') changes = { lunch_end: nowTime };
         else if (actionKey === 'check_out') {
@@ -132,7 +138,7 @@ serve(async (req) => {
           const hoursWorked = Math.max(0, (nowMinutes - checkIn - lunchMinutes) / 60);
           changes = { check_out: nowTime, hours_worked: hoursWorked.toFixed(2) };
         } else if (actionKey === 'interventions') {
-          changes = { interventions: payload.data?.interventions || [] };
+          changes = { interventions: normalizedPayload.data?.interventions || [] };
         } else return json({ error: 'Unsupported employee attendance action' }, 400);
       }
 
