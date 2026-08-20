@@ -10,8 +10,10 @@ import {
     ArrowLeft,
     Calendar,
     Clock,
+    Coffee,
     Download,
     Edit,
+    MapPin,
     QrCode,
     Mail,
     Phone,
@@ -319,6 +321,8 @@ export default function EmployeeDetails() {
                                         <TableHead>Date</TableHead>
                                         <TableHead>Arrivée</TableHead>
                                         <TableHead>Départ</TableHead>
+                                        <TableHead>Pause</TableHead>
+                                        <TableHead>Interventions</TableHead>
                                         <TableHead>Heures</TableHead>
                                         <TableHead>Statut</TableHead>
                                     </TableRow>
@@ -333,8 +337,31 @@ export default function EmployeeDetails() {
                                                 </TableCell>
                                                 <TableCell>{attendance.check_in}</TableCell>
                                                 <TableCell>{attendance.check_out || '-'}</TableCell>
+                                                <TableCell className="whitespace-nowrap">
+                                                    {attendance.lunch_start ? (
+                                                        <div className="flex items-center gap-1 text-orange-600">
+                                                            <Coffee className="w-3 h-3" />
+                                                            <span className="text-sm">{attendance.lunch_start} → {attendance.lunch_end || 'en cours'}</span>
+                                                        </div>
+                                                    ) : '-'}
+                                                </TableCell>
+                                                <TableCell className="min-w-[180px]">
+                                                    {Array.isArray(attendance.interventions) && attendance.interventions.length > 0 ? (
+                                                        <div className="space-y-1">
+                                                            {attendance.interventions.map((intervention, index) => (
+                                                                <div key={index} className="flex items-start gap-1 text-blue-700">
+                                                                    <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                                                                    <div className="text-sm">
+                                                                        <span>{intervention.departure_time || '--:--'} → {intervention.return_time || 'en cours'}</span>
+                                                                        {intervention.location && <span className="block text-xs text-slate-400">{intervention.location}</span>}
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : '-'}
+                                                </TableCell>
                                                 <TableCell>
-                                                    {attendance.hours_worked ? `${attendance.hours_worked.toFixed(1)}h` : '-'}
+                                                    {attendance.hours_worked ? `${Number(attendance.hours_worked).toFixed(1)}h` : '-'}
                                                 </TableCell>
                                                 <TableCell>
                                                     <Badge className={`${statusInfo.className} border`}>
