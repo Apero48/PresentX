@@ -1,4 +1,4 @@
-const USER_CACHE_KEY = 'presencex.offline.user';
+const USER_CACHE_KEY = 'presencex.offline.session';
 const EMPLOYEE_CACHE_KEY = 'presencex.offline.employee';
 const QUEUE_KEY = 'presencex.offline.attendance.queue';
 
