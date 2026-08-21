@@ -1,4 +1,5 @@
 import React from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { supabaseClient } from '@/api/supabaseClient';
@@ -14,11 +15,43 @@ import {
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 import { useAuth } from '@/hooks/useAuth';
 import { normalizeRole } from '@/services/authService';
+import { getOfflinePinStatus, verifyOfflinePin, unlockOfflineSession } from '@/services/offlinePinService';
 
 export default function Layout({ children, currentPageName }) {
     const { user, loading } = useAuth();
+    const [offlinePinStatus, setOfflinePinStatus] = useState(() => getOfflinePinStatus());
+    const [offlinePin, setOfflinePin] = useState('');
+    const [offlinePinError, setOfflinePinError] = useState('');
 
     const isAdmin = normalizeRole(user) === 'admin';
+
+    useEffect(() => {
+        const refreshOfflineLock = () => setOfflinePinStatus(getOfflinePinStatus());
+        window.addEventListener('online', refreshOfflineLock);
+        window.addEventListener('offline', refreshOfflineLock);
+        return () => {
+            window.removeEventListener('online', refreshOfflineLock);
+            window.removeEventListener('offline', refreshOfflineLock);
+        };
+    }, []);
+
+    const handleOfflineUnlock = async (event) => {
+        event.preventDefault();
+        try {
+            const valid = await verifyOfflinePin(offlinePin);
+            if (!valid) {
+                setOfflinePinError('PIN incorrect.');
+                setOfflinePin('');
+                return;
+            }
+            unlockOfflineSession();
+            setOfflinePinStatus(getOfflinePinStatus());
+            setOfflinePinError('');
+            setOfflinePin('');
+        } catch (error) {
+            setOfflinePinError(error?.message || 'Déverrouillage impossible.');
+        }
+    };
 
     const adminPages = [
         { name: 'Dashboard', path: 'Dashboard', icon: Home },
@@ -48,12 +81,41 @@ export default function Layout({ children, currentPageName }) {
         );
     }
 
-    if (!user) {
+        if (!user) {
         supabaseClient.auth.redirectToLogin();
         return null;
     }
 
+    const mustUnlockOffline = !navigator.onLine && offlinePinStatus.configured && offlinePinStatus.locked;
+
+    if (mustUnlockOffline) {
+        return (
+            <div className="min-h-screen flex items-center justify-center msa-gradient-soft p-6">
+                <form onSubmit={handleOfflineUnlock} className="w-full max-w-sm rounded-3xl bg-white p-7 shadow-2xl space-y-5">
+                    <div className="text-center">
+                        <h1 className="text-2xl font-bold text-slate-900">Accès hors connexion</h1>
+                        <p className="mt-2 text-sm text-slate-600">Internet est indisponible. Entrez votre PIN local pour ouvrir Scanner.</p>
+                    </div>
+                    <input
+                        type="password"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={6}
+                        autoFocus
+                        value={offlinePin}
+                        onChange={(event) => setOfflinePin(event.target.value.replace(/\\D/g, ''))}
+                        className="w-full rounded-xl border border-slate-300 px-4 py-4 text-center text-2xl tracking-[0.5em]"
+                        placeholder="••••"
+                    />
+                    {offlinePinError && <p className="text-center text-sm text-red-600">{offlinePinError}</p>}
+                    <button type="submit" className="w-full rounded-xl bg-[#1458B8] py-4 font-semibold text-white">Déverrouiller</button>
+                </form>
+            </div>
+        );
+    }
+
     return (
+
         <div className="min-h-screen msa-gradient-soft pb-24">
             {/* Header avec notifications pour admin */}
             {isAdmin && (

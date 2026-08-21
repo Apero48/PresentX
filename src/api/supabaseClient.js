@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
 import { getCachedOfflineSession, getCachedOfflineEmployee, cacheOfflineSession, clearOfflineSession } from '@/services/offlineAttendanceStore';
+import { isOfflinePinConfigured, lockOfflineSession } from '@/services/offlinePinService';
 
 // Configuration Supabase
 // IMPORTANT: Remplacez ces valeurs par vos propres credentials Supabase
@@ -36,7 +37,7 @@ class SupabaseClient {
         me: async () => {
             const { data: { user }, error } = await supabase.auth.getUser()
             if (error || !user) {
-                const cached = getCachedOfflineSession()
+                const cached = !navigator.onLine ? getCachedOfflineSession() : null
                 if (cached) return cached
                 throw new Error('Not authenticated')
             }
@@ -120,7 +121,11 @@ class SupabaseClient {
                 const { error } = await supabase.auth.signOut()
                 if (error) throw error
             } finally {
-                clearOfflineSession()
+                if (isOfflinePinConfigured()) {
+                    lockOfflineSession();
+                } else {
+                    clearOfflineSession();
+                }
                 window.location.href = '/login'
             }
         },

@@ -5,14 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Phone, Briefcase, Clock, LogOut, Shield, QrCode } from "lucide-react";
+import { Mail, Phone, Briefcase, Clock, LogOut, Shield, QrCode, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { getCachedOfflineEmployee } from '@/services/offlineAttendanceStore';
 import QRCode from 'qrcode';
+import { getOfflinePinStatus, setOfflinePin, clearOfflinePin } from '@/services/offlinePinService';
 
 export default function Profile() {
     const [user, setUser] = useState(null);
     const [employee, setEmployee] = useState(null);
+    const [offlinePinStatus, setOfflinePinStatus] = useState(() => getOfflinePinStatus());
 
     const { data: allEmployees = [] } = useQuery({
         queryKey: ['employees'],
@@ -46,6 +48,31 @@ export default function Profile() {
 
     const handleLogout = () => {
         supabaseClient.auth.logout();
+    };
+
+    const handleOfflinePinSetup = async () => {
+        const pin = window.prompt('Définissez un PIN hors connexion de 4 à 6 chiffres :');
+        if (pin === null) return;
+        const confirmation = window.prompt('Confirmez le PIN hors connexion :');
+        if (pin !== confirmation) {
+            toast.error('Les deux PIN ne correspondent pas.');
+            return;
+        }
+        try {
+            await setOfflinePin(pin);
+            setOfflinePinStatus(getOfflinePinStatus());
+            toast.success('Accès hors connexion activé', {
+                description: 'Vous pourrez déverrouiller l’application avec ce PIN sans Internet.'
+            });
+        } catch (error) {
+            toast.error(error?.message || 'Impossible d’activer le mode hors connexion.');
+        }
+    };
+
+    const handleOfflinePinDisable = () => {
+        clearOfflinePin();
+        setOfflinePinStatus(getOfflinePinStatus());
+        toast.success('Accès hors connexion désactivé');
     };
 
     const generateUniversalQR = async () => {
@@ -263,6 +290,31 @@ export default function Profile() {
                                         <p className="font-medium text-slate-900">{employee.start_time} - {employee.end_time || '17:00'}</p>
                                     </div>
                                 </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-0 shadow-lg">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-xl font-semibold text-slate-900">
+                                <KeyRound className="w-5 h-5 text-[#1458B8]" />
+                                Accès hors connexion
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3 px-6 pb-6">
+                            <p className="text-sm text-slate-600">
+                                Activez cette option une fois avec Internet pour pouvoir déverrouiller l’application et scanner sans réseau.
+                            </p>
+                            <Button
+                                onClick={offlinePinStatus.configured ? handleOfflinePinDisable : handleOfflinePinSetup}
+                                variant={offlinePinStatus.configured ? 'outline' : 'default'}
+                                className="w-full py-5"
+                            >
+                                <KeyRound className="w-5 h-5 mr-2" />
+                                {offlinePinStatus.configured ? 'Désactiver le PIN hors connexion' : 'Activer le PIN hors connexion'}
+                            </Button>
+                            {offlinePinStatus.configured && (
+                                <p className="text-xs text-emerald-700">PIN activé sur cet appareil. Ne partagez pas ce téléphone.</p>
                             )}
                         </CardContent>
                     </Card>
