@@ -141,6 +141,8 @@ export default function Scanner() {
             return;
         }
 
+        toast.success('QR code détecté');
+
         if (employeeProfile?.role === 'admin') {
             setShowEmployeeSelector(true);
         } else if (employeeProfile) {
@@ -178,7 +180,7 @@ export default function Scanner() {
                 try {
                     todayAttendance = await Promise.race([
                         getTodayAttendanceForEmployee(employee.id),
-                        new Promise((_, reject) => setTimeout(() => reject(new Error('network-timeout')), 1500)),
+                        new Promise((_, reject) => setTimeout(() => reject(new Error('network-timeout')), 350)),
                     ]);
                 } catch (error) {
                     offlineFallback = true;
