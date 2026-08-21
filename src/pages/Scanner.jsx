@@ -173,14 +173,22 @@ export default function Scanner() {
             }
 
             let todayAttendance = null;
-            try {
-                todayAttendance = await getTodayAttendanceForEmployee(employee.id);
-            } catch (error) {
-                if (navigator.onLine) throw error;
+            let offlineFallback = !navigator.onLine;
+            if (!offlineFallback) {
+                try {
+                    todayAttendance = await Promise.race([
+                        getTodayAttendanceForEmployee(employee.id),
+                        new Promise((_, reject) => setTimeout(() => reject(new Error('network-timeout')), 1500)),
+                    ]);
+                } catch (error) {
+                    offlineFallback = true;
+                }
+            }
+            if (offlineFallback && !todayAttendance) {
                 todayAttendance = getOfflineAttendanceForToday(employee.id, today);
             }
 
-            if (!todayAttendance && !navigator.onLine) {
+            if (!todayAttendance && offlineFallback) {
                 const startTime = employee.start_time || '08:00';
                 const [startHour, startMinute] = startTime.split(':').map(Number);
                 const [currentHour, currentMinute] = currentTime.split(':').map(Number);
