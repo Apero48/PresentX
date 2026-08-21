@@ -41,6 +41,26 @@ export default function Employees() {
         queryFn: () => supabaseClient.entities.Employee.list('-full_name')
     });
 
+    const deleteMutation = useMutation({
+        mutationFn: (employee) => supabaseClient.entities.Employee.delete(employee.id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['employees'] });
+            toast.success('Employé supprimé', {
+                description: 'Son accès a été désactivé et son historique de présence a été conservé.'
+            });
+        },
+        onError: (error) => {
+            toast.error(error?.message || 'Impossible de supprimer cet employé');
+        }
+    });
+
+    const handleDelete = (employee) => {
+        const confirmed = window.confirm(
+            `Supprimer ${employee.full_name} ?\n\nSon accès sera désactivé et son historique de présence sera conservé.`
+        );
+        if (confirmed) deleteMutation.mutate(employee);
+    };
+
     const createMutation = useMutation({
         mutationFn: (data) => supabaseClient.entities.Employee.create(data),
         onSuccess: () => {
@@ -97,7 +117,7 @@ export default function Employees() {
         });
     };
 
-    const filteredEmployees = employees.filter(emp =>
+    const filteredEmployees = employees.filter(emp => emp.is_active !== false).filter(emp =>
         emp.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.department?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -147,6 +167,8 @@ export default function Employees() {
                                 <EmployeeCard
                                     employee={employee}
                                     onClick={() => { }}
+                                    onDelete={handleDelete}
+                                    isDeleting={deleteMutation.isPending && deleteMutation.variables?.id === employee.id}
                                 />
                             </Link>
                         ))}
