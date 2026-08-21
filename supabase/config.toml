@@ -1,3 +1,6 @@
 [functions]
   [functions.attendance-api]
     verify_jwt = false
+
+  [functions.auto-close-attendance]
+    verify_jwt = false
