@@ -166,9 +166,9 @@ export default function Scanner() {
             const openingMinutes = 8 * 60;
             const closingMinutes = 19 * 60;
 
-            if (currentMinutes < openingMinutes || currentMinutes > closingMinutes) {
+            if (currentMinutes > closingMinutes) {
                 toast.error('Pointage fermé', {
-                    description: 'Le pointage est disponible de 08:00 à 19:00.'
+                    description: 'Le pointage est disponible jusqu’à 19:00.'
                 });
                 setIsProcessing(false);
                 return;
@@ -276,8 +276,8 @@ export default function Scanner() {
             const now = new Date();
             const currentTime = format(now, 'HH:mm');
             const currentMinutes = now.getHours() * 60 + now.getMinutes();
-            if (currentMinutes < 8 * 60 || currentMinutes > 19 * 60) {
-                toast.error('Pointage fermé', { description: 'Le pointage est disponible de 08:00 à 19:00.' });
+            if (currentMinutes > 19 * 60) {
+                toast.error('Pointage fermé', { description: 'Le pointage est disponible jusqu’à 19:00.' });
                 return;
             }
 
