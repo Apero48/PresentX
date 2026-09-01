@@ -53,26 +53,33 @@ Deno.serve(async (req) => {
     if (employeeError) return json({ error: employeeError.message }, 500);
     if (!employee) return json({ error: 'Employee not found' }, 404);
 
-    // Keep the employee row so all historical attendances remain linked and auditable.
-    const { error: archiveError } = await adminClient
-      .from('employees')
-      .update({ is_active: false })
-      .eq('id', employee.id);
-    if (archiveError) return json({ error: archiveError.message }, 500);
+    // Delete all attendance records first to satisfy foreign key constraints.
+    const { error: attendancesError } = await adminClient
+      .from('attendances')
+      .delete()
+      .eq('employee_id', employee.id);
+    if (attendancesError) return json({ error: `Erreur lors de la suppression de l'historique: ${attendancesError.message}` }, 500);
 
-    // Revoke authentication access when the profile has an Auth user.
+    // Delete the employee record.
+    const { error: deleteProfileError } = await adminClient
+      .from('employees')
+      .delete()
+      .eq('id', employee.id);
+    if (deleteProfileError) return json({ error: `Erreur lors de la suppression du profil: ${deleteProfileError.message}` }, 500);
+
+    // Revoke authentication access.
     if (employee.user_id) {
       const { error: deleteAuthError } = await adminClient.auth.admin.deleteUser(employee.user_id);
       if (deleteAuthError) {
         return json({
-          success: false,
-          archived: true,
-          warning: `Profil désactivé, mais le compte Auth n'a pas pu être supprimé: ${deleteAuthError.message}`,
-        }, 500);
+          success: true,
+          deleted: true,
+          warning: `Profil et historique supprimés, mais le compte Auth n'a pas pu être supprimé: ${deleteAuthError.message}`,
+        }, 200);
       }
     }
 
-    return json({ success: true, archived: true, employee_id: employee.id });
+    return json({ success: true, deleted: true, employee_id: employee.id });
   } catch (error) {
     return json({ error: error instanceof Error ? error.message : 'Unexpected error' }, 500);
   }

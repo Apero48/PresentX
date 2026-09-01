@@ -88,6 +88,25 @@ export default function EmployeeDetails() {
         setIsEditDialogOpen(true);
     };
 
+    const deleteMutation = useMutation({
+        mutationFn: (id) => supabaseClient.entities.Employee.delete(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries(['employees']);
+            toast.success('Employé supprimé définitivement');
+            window.location.href = createPageUrl('Employees');
+        },
+        onError: (error) => {
+            toast.error(error?.message || 'Erreur lors de la suppression');
+        }
+    });
+
+    const handleDelete = () => {
+        const confirmed = window.confirm(
+            `Supprimer définitivement ${employee.full_name} ?\n\nAttention : son compte d'accès et TOUT son historique de présence seront effacés.`
+        );
+        if (confirmed) deleteMutation.mutate(employeeId);
+    };
+
     const handleUpdate = (e) => {
         e.preventDefault();
         updateMutation.mutate({ id: employeeId, data: formData });
@@ -242,16 +261,24 @@ export default function EmployeeDetails() {
                                     )}
                                 </div>
 
-                                <div className="flex gap-3">
-                                    <Button onClick={handleEdit} variant="outline">
-                                        <Edit className="w-4 h-4 mr-2" />
-                                        Modifier
-                                    </Button>
-                                    <Button onClick={handleGenerateQR} variant="outline">
-                                        <QrCode className="w-4 h-4 mr-2" />
-                                        Télécharger QR Code
-                                    </Button>
-                                </div>
+                                                                    <div className="flex gap-3">
+                                        <Button onClick={handleEdit} variant="outline">
+                                            <Edit className="w-4 h-4 mr-2" />
+                                            Modifier
+                                        </Button>
+                                        <Button onClick={handleGenerateQR} variant="outline">
+                                            <QrCode className="w-4 h-4 mr-2" />
+                                            Télécharger QR Code
+                                        </Button>
+                                        <Button
+                                            onClick={handleDelete}
+                                            variant="destructive"
+                                            disabled={deleteMutation.isPending}
+                                        >
+                                            {deleteMutation.isPending ? 'Suppression...' : 'Supprimer le compte'}
+                                        </Button>
+                                    </div>
+
                             </div>
                         </div>
                     </CardContent>

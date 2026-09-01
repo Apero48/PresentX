@@ -45,9 +45,7 @@ export default function Employees() {
         mutationFn: (employee) => supabaseClient.entities.Employee.delete(employee.id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['employees'] });
-            toast.success('Employé supprimé', {
-                description: 'Son accès a été désactivé et son historique de présence a été conservé.'
-            });
+            toast.success('Employé supprimé définitivement');
         },
         onError: (error) => {
             toast.error(error?.message || 'Impossible de supprimer cet employé');
@@ -56,7 +54,7 @@ export default function Employees() {
 
     const handleDelete = (employee) => {
         const confirmed = window.confirm(
-            `Supprimer ${employee.full_name} ?\n\nSon accès sera désactivé et son historique de présence sera conservé.`
+            `Supprimer définitivement ${employee.full_name} ?\n\nAttention : son compte d'accès et TOUT son historique de présence seront effacés.`
         );
         if (confirmed) deleteMutation.mutate(employee);
     };
