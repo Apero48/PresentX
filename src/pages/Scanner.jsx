@@ -163,12 +163,12 @@ export default function Scanner() {
             const today = format(now, 'yyyy-MM-dd');
             const currentTime = format(now, 'HH:mm');
             const currentMinutes = now.getHours() * 60 + now.getMinutes();
-            const openingMinutes = 8 * 60;
-            const closingMinutes = 19 * 60;
-
-            if (currentMinutes > closingMinutes) {
-                toast.error('Pointage fermé', {
-                    description: 'Le pointage est disponible jusqu’à 19:00.'
+            const openingMinutes = 7 * 60;
+            // No closing limit for check-out as per boss's request
+            
+            if (currentMinutes < openingMinutes) {
+                toast.error('Pointage non disponible', {
+                    description: 'Le pointage est disponible à partir de 07:00.'
                 });
                 setIsProcessing(false);
                 return;
@@ -194,7 +194,8 @@ export default function Scanner() {
                 const startTime = employee.start_time || '08:00';
                 const [startHour, startMinute] = startTime.split(':').map(Number);
                 const [currentHour, currentMinute] = currentTime.split(':').map(Number);
-                const status = (currentHour * 60 + currentMinute) > (startHour * 60 + startMinute + 15) ? 'late' : 'present';
+                // Late if after start_time + 10 minutes (08:10 if start is 08:00)
+                const status = (currentHour * 60 + currentMinute) > (startHour * 60 + startMinute + 10) ? 'late' : 'present';
                 const queuedAttendance = enqueueOfflineAttendance({
                     employee_id: employee.id,
                     employee_name: employee.full_name,
@@ -222,7 +223,7 @@ export default function Scanner() {
 
                 const startTotalMinutes = startHour * 60 + startMinute;
                 const currentTotalMinutes = currentHour * 60 + currentMinute;
-                const toleranceMinutes = 15;
+                const toleranceMinutes = 10; // Late after 08:10
 
                 let status = 'present';
                 if (currentTotalMinutes > startTotalMinutes + toleranceMinutes) {
@@ -275,11 +276,7 @@ export default function Scanner() {
         setShowActionModal(false);
             const now = new Date();
             const currentTime = format(now, 'HH:mm');
-            const currentMinutes = now.getHours() * 60 + now.getMinutes();
-            if (currentMinutes > 19 * 60) {
-                toast.error('Pointage fermé', { description: 'Le pointage est disponible jusqu’à 19:00.' });
-                return;
-            }
+            // Allow actions (lunch, intervention, checkout) at any time once checked in
 
         if (actionKey === 'lunch_start') {
             await updateAttendanceMutation.mutateAsync({
