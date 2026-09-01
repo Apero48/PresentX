@@ -17,7 +17,9 @@ import {
     QrCode,
     Mail,
     Phone,
-    Briefcase
+    Briefcase,
+    Trash2,
+    AlertTriangle
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
@@ -48,6 +50,7 @@ export default function EmployeeDetails() {
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [formData, setFormData] = useState({});
 
     const queryClient = useQueryClient();
@@ -82,6 +85,23 @@ export default function EmployeeDetails() {
             toast.success('Employé modifié avec succès');
         }
     });
+
+    const deleteMutation = useMutation({
+        mutationFn: (id) => supabaseClient.auth.deleteEmployeeAccount(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries(['employees']);
+            toast.success('Compte supprimé avec succès');
+            window.location.href = '/employees';
+        },
+        onError: (error) => {
+            toast.error(error?.message || 'Erreur lors de la suppression du compte');
+            setIsDeleteDialogOpen(false);
+        }
+    });
+
+    const handleDeleteEmployee = () => {
+        deleteMutation.mutate(employeeId);
+    };
 
     const handleEdit = () => {
         setFormData(employee);
@@ -242,7 +262,7 @@ export default function EmployeeDetails() {
                                     )}
                                 </div>
 
-                                <div className="flex gap-3">
+                                <div className="flex flex-wrap gap-3">
                                     <Button onClick={handleEdit} variant="outline">
                                         <Edit className="w-4 h-4 mr-2" />
                                         Modifier
@@ -250,6 +270,14 @@ export default function EmployeeDetails() {
                                     <Button onClick={handleGenerateQR} variant="outline">
                                         <QrCode className="w-4 h-4 mr-2" />
                                         Télécharger QR Code
+                                    </Button>
+                                    <Button
+                                        onClick={() => setIsDeleteDialogOpen(true)}
+                                        variant="outline"
+                                        className="border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400"
+                                    >
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        Supprimer le compte
                                     </Button>
                                 </div>
                             </div>
@@ -457,6 +485,48 @@ export default function EmployeeDetails() {
                             </Button>
                         </DialogFooter>
                     </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Dialog de confirmation de suppression */}
+            <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-red-600">
+                            <AlertTriangle className="w-5 h-5" />
+                            Supprimer le compte
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4 space-y-3">
+                        <p className="text-gray-700">
+                            Vous êtes sur le point de supprimer définitivement le compte de :
+                        </p>
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                            <p className="font-bold text-gray-900 text-lg">{employee?.full_name}</p>
+                            <p className="text-gray-500 text-sm">{employee?.email}</p>
+                        </div>
+                        <p className="text-sm text-red-600 font-medium">
+                            ⚠️ Cette action est irréversible. Tout l'historique de présence sera également supprimé.
+                        </p>
+                    </div>
+                    <DialogFooter className="gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setIsDeleteDialogOpen(false)}
+                            disabled={deleteMutation.isPending}
+                        >
+                            Annuler
+                        </Button>
+                        <Button
+                            type="button"
+                            onClick={handleDeleteEmployee}
+                            disabled={deleteMutation.isPending}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                            {deleteMutation.isPending ? 'Suppression...' : 'Oui, supprimer définitivement'}
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </div>

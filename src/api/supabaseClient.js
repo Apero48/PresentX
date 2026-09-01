@@ -116,6 +116,16 @@ class SupabaseClient {
             return data.employee
         },
 
+        deleteEmployeeAccount: async (employee_id) => {
+            const { data, error } = await supabase.functions.invoke('remove-employee', {
+                body: { employee_id }
+            })
+
+            if (error) throw error
+            if (!data?.success) throw new Error(data?.error || 'Suppression du compte impossible')
+            return data
+        },
+
         logout: async () => {
             try {
                 const { error } = await supabase.auth.signOut()
