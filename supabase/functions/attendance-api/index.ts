@@ -80,13 +80,13 @@ Deno.serve(async (req) => {
       if (!isAdmin && employeeId !== actor.id) return json({ error: 'Employees can only create their own attendance' }, 403);
       const date = normalizedPayload.date || nowDate;
       const isOfflineSync = normalizedPayload.offline === true;
-      if (!isOfflineSync && nowMinutes > 19 * 60) {
-        return json({ error: 'Attendance is closed after 19:00' }, 422);
+      if (nowMinutes < 7 * 60) {
+        return json({ error: 'Attendance is only available from 07:00' }, 422);
       }
       const checkInTime = isOfflineSync ? String(normalizedPayload.check_in || '') : nowTime;
       const checkInMinutes = timeToMinutes(checkInTime);
-      if (isOfflineSync && (Number.isNaN(checkInMinutes) || checkInMinutes > 19 * 60)) {
-        return json({ error: 'Offline check-in time is after 19:00' }, 422);
+      if (Number.isNaN(checkInMinutes) || checkInMinutes < 7 * 60) {
+        return json({ error: 'Check-in time must be after 07:00' }, 422);
       }
       const { data: existing } = await adminClient.from('attendances')
         .select('id').eq('employee_id', employeeId).eq('date', date).maybeSingle();
@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
       if (existingError) return json({ error: existingError.message }, 500);
       if (!existing) return json({ error: 'Attendance not found' }, 404);
       if (!isAdmin && existing.employee_id !== actor.id) return json({ error: 'You can only update your own attendance' }, 403);
-      if (nowMinutes > 19 * 60) return json({ error: 'Attendance is closed after 19:00' }, 422);
+      // Allow updates (lunch, checkout) even after 19:00
 
       let changes: Record<string, unknown> = {};
       if (isAdmin) {

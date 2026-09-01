@@ -206,13 +206,13 @@ class SupabaseClient {
             },
 
             delete: async (id) => {
-                const { error } = await supabase
-                    .from('employees')
-                    .delete()
-                    .eq('id', id)
+                const { data, error } = await supabase.functions.invoke('remove-employee', {
+                    body: { employee_id: id }
+                })
 
                 if (error) throw error
-                return { success: true }
+                if (!data?.success) throw new Error(data?.error || data?.warning || 'Suppression impossible')
+                return data
             }
         },
 

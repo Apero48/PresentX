@@ -7,7 +7,6 @@ const Signup = lazy(() => import('./pages/Signup'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Employees = lazy(() => import('./pages/Employees'));
 const Scanner = lazy(() => import('./pages/Scanner'));
-const Reports = lazy(() => import('./pages/Reports'));
 const History = lazy(() => import('./pages/History'));
 const MyHistory = lazy(() => import('./pages/MyHistory'));
 const EmployeeDetails = lazy(() => import('./pages/EmployeeDetails'));
@@ -22,7 +21,7 @@ function App() {
             <Route path="/Dashboard" element={<Layout currentPageName="Dashboard"><Dashboard /></Layout>} />
             <Route path="/Employees" element={<Layout currentPageName="Employees"><Employees /></Layout>} />
             <Route path="/Scanner" element={<Layout currentPageName="Scanner"><Scanner /></Layout>} />
-            <Route path="/Reports" element={<Layout currentPageName="Reports"><Reports /></Layout>} />
+            <Route path="/Reports" element={<Navigate to="/Dashboard" replace />} />
             <Route path="/History" element={<Layout currentPageName="History"><History /></Layout>} />
             <Route path="/MyHistory" element={<Layout currentPageName="MyHistory"><MyHistory /></Layout>} />
             <Route path="/EmployeeDetails" element={<Layout currentPageName="EmployeeDetails"><EmployeeDetails /></Layout>} />

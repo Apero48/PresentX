@@ -57,7 +57,6 @@ export default function Layout({ children, currentPageName }) {
         { name: 'Dashboard', path: 'Dashboard', icon: Home },
         { name: 'Employés', path: 'Employees', icon: Users },
         { name: 'Pointages', path: 'History', icon: BarChart3 },
-        { name: 'Rapports', path: 'Reports', icon: BarChart3 },
         { name: 'Paramètres', path: 'Profile', icon: UserCircle }
     ];
 
