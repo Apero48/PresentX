@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
       if (existingError) return json({ error: existingError.message }, 500);
       if (!existing) return json({ error: 'Attendance not found' }, 404);
       if (!isAdmin && existing.employee_id !== actor.id) return json({ error: 'You can only update your own attendance' }, 403);
-      // Allow updates (lunch, checkout) even after 19:00
+      if (nowMinutes < 7 * 60) return json({ error: 'Attendance is only available from 07:00' }, 422);
 
       let changes: Record<string, unknown> = {};
       if (isAdmin) {

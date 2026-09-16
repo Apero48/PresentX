@@ -73,7 +73,7 @@ serve(async (req) => {
     if (action === 'create-attendance') {
       const employeeId = payload.employee_id || actor.id;
       if (!isAdmin && employeeId !== actor.id) return json({ error: 'Employees can only create their own attendance' }, 403);
-      if (nowMinutes < 8 * 60 || nowMinutes > 19 * 60) return json({ error: 'Attendance is closed outside 08:00–19:00' }, 422);
+      if (nowMinutes < 7 * 60) return json({ error: 'Attendance is only available from 07:00' }, 422);
 
       const date = payload.date || nowDate;
       const { data: existing } = await adminClient.from('attendances')
@@ -106,7 +106,7 @@ serve(async (req) => {
       if (existingError) return json({ error: existingError.message }, 500);
       if (!existing) return json({ error: 'Attendance not found' }, 404);
       if (!isAdmin && existing.employee_id !== actor.id) return json({ error: 'You can only update your own attendance' }, 403);
-      if (nowMinutes < 8 * 60 || nowMinutes > 19 * 60) return json({ error: 'Attendance is closed outside 08:00–19:00' }, 422);
+      if (nowMinutes < 7 * 60) return json({ error: 'Attendance is only available from 07:00' }, 422);
 
       let changes: Record<string, unknown> = {};
       if (isAdmin) {
