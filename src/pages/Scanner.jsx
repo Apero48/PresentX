@@ -19,6 +19,7 @@ import {
     getOfflineAttendanceForToday,
     enqueueOfflineAttendance,
     flushOfflineAttendanceQueue,
+    hasPendingOfflineAttendance,
 } from '@/services/offlineAttendanceStore';
 
 export default function Scanner() {
@@ -81,8 +82,11 @@ export default function Scanner() {
                 const result = await flushOfflineAttendanceQueue(callAttendanceEdgeFunction);
                 if (result.synced > 0) {
                     toast.success(`${result.synced} pointage(s) hors connexion synchronisé(s)`);
-                    queryClient.invalidateQueries(['attendances']);
-                    queryClient.invalidateQueries(['todayAttendances']);
+                    queryClient.invalidateQueries({ queryKey: ['attendances'] });
+                    queryClient.invalidateQueries({ queryKey: ['todayAttendances'] });
+                    queryClient.invalidateQueries({ queryKey: ['allAttendances'] });
+                    queryClient.invalidateQueries({ queryKey: ['allHistory'] });
+                    queryClient.invalidateQueries({ queryKey: ['recentAttendances'] });
                 }
             } catch (error) {
                 console.warn('Synchronisation hors connexion impossible:', error);
@@ -143,8 +147,10 @@ export default function Scanner() {
 
         toast.success('QR code détecté');
 
-        if (employeeProfile?.role === 'admin') {
-            setShowEmployeeSelector(true);
+        if (employeeProfile?.role === 'admin' || employeeProfile?.role === 'super_admin') {
+            toast.info('L’administrateur n’effectue pas de pointage employé.');
+            setIsProcessing(false);
+            return;
         } else if (employeeProfile) {
             await handleEmployeeSelect(employeeProfile);
         } else {
@@ -164,14 +170,22 @@ export default function Scanner() {
             const currentTime = format(now, 'HH:mm');
             const currentMinutes = now.getHours() * 60 + now.getMinutes();
             const openingMinutes = 7 * 60;
-            // No closing limit for check-out as per boss's request
-            
-            if (currentMinutes < openingMinutes) {
+            const closingMinutes = 21 * 60;
+
+            if (currentMinutes < openingMinutes || currentMinutes > closingMinutes) {
                 toast.error('Pointage non disponible', {
-                    description: 'Le pointage est disponible à partir de 07:00.'
+                    description: 'Le pointage est disponible entre 07:00 et 21:00.'
                 });
                 setIsProcessing(false);
                 return;
+            }
+
+            if (navigator.onLine) {
+                try {
+                    await flushOfflineAttendanceQueue(callAttendanceEdgeFunction);
+                } catch (error) {
+                    console.warn('Synchronisation de file offline impossible au retour du réseau:', error);
+                }
             }
 
             let todayAttendance = null;
@@ -187,6 +201,9 @@ export default function Scanner() {
                 }
             }
             if (offlineFallback && !todayAttendance) {
+                todayAttendance = getOfflineAttendanceForToday(employee.id, today);
+            }
+            if (!todayAttendance && !offlineFallback && hasPendingOfflineAttendance(employee.id, today)) {
                 todayAttendance = getOfflineAttendanceForToday(employee.id, today);
             }
 
