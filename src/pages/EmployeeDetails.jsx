@@ -152,40 +152,217 @@ export default function EmployeeDetails() {
     };
 
     const exportToPDF = () => {
-        const printContent = document.getElementById('attendance-table');
-        const printWindow = window.open('', '', 'height=600,width=800');
+        const printWindow = window.open('', '', 'height=900,width=1200');
+        if (!printWindow) {
+            toast.error('La fenêtre d’impression a été bloquée par le navigateur.');
+            return;
+        }
+
+        const department = employee?.department || 'Non défini';
+        const totalHoursValue = filteredAttendances.reduce((sum, att) => sum + (Number(att.hours_worked) || 0), 0);
+        const startLabel = startDate ? format(new Date(startDate), 'dd/MM/yyyy') : '—';
+        const endLabel = endDate ? format(new Date(endDate), 'dd/MM/yyyy') : 'Aujourd\'hui';
+
+        const summaryRows = filteredAttendances.map((attendance) => {
+            const hours = Number(attendance.hours_worked);
+            const statusLabel = attendance.status === 'late' ? 'Retard' : attendance.status === 'present' ? 'Présent' : attendance.status === 'absent' ? 'Absent' : 'Partiel';
+            const interventions = Array.isArray(attendance.interventions) && attendance.interventions.length > 0
+                ? attendance.interventions.map((item) => `${item.departure_time || '--:--'} → ${item.return_time || 'en cours'}`).join('<br>')
+                : '-';
+
+            return `
+                <tr>
+                    <td>${format(new Date(attendance.date), 'dd MMMM yyyy', { locale: fr })}</td>
+                    <td>${attendance.check_in || '-'}</td>
+                    <td>${attendance.check_out || '-'}</td>
+                    <td>${attendance.lunch_start ? `${attendance.lunch_start} → ${attendance.lunch_end || 'en cours'}` : '-'}</td>
+                    <td>${interventions}</td>
+                    <td>${Number.isFinite(hours) ? `${hours.toFixed(1)}h` : '-'}</td>
+                    <td>${statusLabel}</td>
+                </tr>
+            `;
+        }).join('');
 
         printWindow.document.write(`
       <html>
         <head>
           <title>Historique - ${employee?.full_name}</title>
           <style>
-            body { font-family: Arial, sans-serif; padding: 20px; }
-            h1 { color: #1f2937; border-bottom: 3px solid #3b82f6; padding-bottom: 10px; }
-            .header { margin-bottom: 30px; }
-            .info { margin-bottom: 20px; color: #6b7280; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th, td { border: 1px solid #e5e7eb; padding: 12px; text-align: left; }
-            th { background-color: #f3f4f6; font-weight: bold; }
-            .present { color: #059669; }
-            .late { color: #d97706; }
-            .absent { color: #dc2626; }
+            @page {
+              size: A4 portrait;
+              margin: 12mm;
+            }
+            :root { color-scheme: light; }
+            body {
+              font-family: Arial, sans-serif;
+              margin: 0;
+              padding: 0;
+              background: #ffffff;
+              color: #111827;
+            }
+            .page {
+              width: 100%;
+              min-height: 100vh;
+              box-sizing: border-box;
+              padding: 16mm 12mm;
+            }
+            .header {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              gap: 16px;
+              border-bottom: 2px solid #dbeafe;
+              padding-bottom: 12px;
+              margin-bottom: 12px;
+            }
+            .brand {
+              width: 118px;
+              height: auto;
+            }
+            .brand-text {
+              flex: 1;
+              text-align: right;
+              color: #1d4ed8;
+              font-weight: 700;
+              letter-spacing: 0.08em;
+              text-transform: uppercase;
+              font-size: 12px;
+            }
+            .title {
+              text-align: center;
+              font-size: 27px;
+              font-weight: 800;
+              margin: 12px 0 8px;
+              color: #111827;
+            }
+            .employee-name {
+              text-align: center;
+              font-size: 30px;
+              font-weight: 800;
+              color: #0f172a;
+              margin-bottom: 6px;
+            }
+            .subtitle {
+              text-align: center;
+              font-size: 14px;
+              color: #374151;
+              margin-bottom: 10px;
+            }
+            .meta {
+              text-align: center;
+              font-size: 13px;
+              color: #4b5563;
+              margin-bottom: 10px;
+            }
+            .period {
+              text-align: center;
+              font-size: 19px;
+              font-weight: 700;
+              color: #111827;
+              margin: 8px 0 18px;
+            }
+            .summary {
+              display: grid;
+              grid-template-columns: repeat(3, minmax(120px, 1fr));
+              gap: 12px;
+              margin-bottom: 18px;
+            }
+            .summary-box {
+              border: 1px solid #d1d5db;
+              background: #f8fafc;
+              border-radius: 10px;
+              padding: 10px 12px;
+              text-align: center;
+            }
+            .summary-box strong {
+              display: block;
+              font-size: 11px;
+              letter-spacing: 0.08em;
+              text-transform: uppercase;
+              color: #6b7280;
+              margin-bottom: 4px;
+            }
+            .summary-box span {
+              font-size: 20px;
+              font-weight: 800;
+              color: #0f172a;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 10px;
+              font-size: 11px;
+            }
+            th, td {
+              border: 1px solid #cbd5e1;
+              padding: 8px 6px;
+              text-align: left;
+              vertical-align: top;
+            }
+            th {
+              background: #eff6ff;
+              color: #111827;
+              font-weight: 700;
+              text-transform: uppercase;
+              font-size: 10px;
+            }
+            td {
+              background: #ffffff;
+            }
+            .muted {
+              color: #6b7280;
+            }
             @media print {
-              button { display: none; }
+              body, .page { margin: 0; }
             }
           </style>
         </head>
         <body>
-          <div class="header">
-            <h1>Historique de Présence</h1>
-            <div class="info">
-              <p><strong>Employé:</strong> ${employee?.full_name}</p>
-              <p><strong>Département:</strong> ${employee?.department}</p>
-              <p><strong>Date d'impression:</strong> ${format(new Date(), 'dd MMMM yyyy', { locale: fr })}</p>
-              ${startDate ? `<p><strong>Période:</strong> ${format(new Date(startDate), 'dd/MM/yyyy', { locale: fr })} - ${endDate ? format(new Date(endDate), 'dd/MM/yyyy', { locale: fr }) : 'Aujourd\'hui'}</p>` : ''}
+          <div class="page">
+            <div class="header">
+              <img class="brand" src="/assets/msa-inter-logo.png" alt="Logo MSA" />
+              <div class="brand-text">Presence Management</div>
             </div>
+
+            <div class="title">Historique de Présence</div>
+            <div class="employee-name">${employee?.full_name || 'Employé'}</div>
+            <div class="subtitle">Département: ${department}</div>
+            <div class="meta">Date d'impression: ${format(new Date(), 'dd MMMM yyyy', { locale: fr })}</div>
+            <div class="period">Période: ${startLabel} - ${endLabel}</div>
+
+            <div class="summary">
+              <div class="summary-box">
+                <strong>Présences</strong>
+                <span>${presentCount}</span>
+              </div>
+              <div class="summary-box">
+                <strong>Retards</strong>
+                <span>${lateCount}</span>
+              </div>
+              <div class="summary-box">
+                <strong>Heures totales</strong>
+                <span>${totalHoursValue.toFixed(1)}h</span>
+              </div>
+            </div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Arrivée</th>
+                  <th>Départ</th>
+                  <th>Pause</th>
+                  <th>Interventions</th>
+                  <th>Heures</th>
+                  <th>Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${summaryRows || '<tr><td colspan="7" class="muted">Aucun enregistrement pour cette période</td></tr>'}
+              </tbody>
+            </table>
           </div>
-          ${printContent.innerHTML}
+
           <script>
             window.onload = function() { window.print(); window.close(); }
           </script>
