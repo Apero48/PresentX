@@ -78,9 +78,13 @@ export default function History() {
         const rows = filteredAttendances.map((attendance) => `
             <tr>
                 <td>${attendance.date || '-'}</td>
-                <td>${attendance.employee_name || '-'}</td>
+                <td><strong>${attendance.employee_name || '-'}</strong></td>
                 <td>${attendance.check_in || '-'}</td>
                 <td>${attendance.check_out || '-'}</td>
+                <td>${attendance.lunch_start ? `${attendance.lunch_start} → ${attendance.lunch_end || 'en cours'}` : '-'}</td>
+                <td>${Array.isArray(attendance.interventions) && attendance.interventions.length > 0
+                    ? attendance.interventions.map((item) => `${item.departure_time || '--:--'} → ${item.return_time || 'en cours'}${item.location ? ` (${item.location})` : ''}`).join('<br>')
+                    : '-'}</td>
                 <td>${Number.isFinite(Number(attendance.hours_worked)) ? `${Number(attendance.hours_worked).toFixed(2)} h` : '-'}</td>
                 <td>${getStatusBadge(attendance.status).label}</td>
             </tr>
@@ -102,7 +106,7 @@ export default function History() {
                 .summary-box { border: 1px solid #d1d5db; background: #f8fafc; border-radius: 8px; padding: 12px; text-align: center; }
                 .summary-box strong { display: block; color: #6b7280; font-size: 11px; text-transform: uppercase; margin-bottom: 5px; }
                 .summary-box span { font-size: 20px; font-weight: 800; }
-                table { width: 100%; border-collapse: collapse; font-size: 11px; }
+                table { width: 100%; border-collapse: collapse; font-size: 10px; }
                 th, td { border: 1px solid #cbd5e1; padding: 8px 6px; text-align: left; vertical-align: top; }
                 th { background: #eff6ff; font-weight: 700; text-transform: uppercase; font-size: 10px; }
             </style></head>
@@ -118,9 +122,9 @@ export default function History() {
                         <div class="summary-box"><strong>Heures totales</strong><span>${totalHours.toFixed(1)} h</span></div>
                     </div>
                     <table><thead><tr>
-                        <th>Date</th><th>Employé</th><th>Arrivée</th><th>Départ</th><th>Heures</th><th>Statut</th>
+                        <th>Date</th><th>Employé</th><th>Arrivée</th><th>Départ</th><th>Pause</th><th>Interventions</th><th>Heures</th><th>Statut</th>
                     </tr></thead><tbody>
-                        ${rows || '<tr><td colspan="6">Aucun enregistrement</td></tr>'}
+                        ${rows || '<tr><td colspan="8">Aucun enregistrement</td></tr>'}
                     </tbody></table>
                 </div>
             </body></html>
