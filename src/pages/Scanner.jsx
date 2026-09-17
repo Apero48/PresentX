@@ -249,7 +249,7 @@ export default function Scanner() {
 
                 // L’Edge Function est la seule source d’écriture pour éviter
                 // les doublons créés par un insert frontend + backend.
-                await callAttendanceEdgeFunction({
+                const createdAttendance = await callAttendanceEdgeFunction({
                     action: 'create-attendance',
                     payload: {
                         employee_id: employee.id,
@@ -260,6 +260,22 @@ export default function Scanner() {
                         interventions: []
                     }
                 });
+
+                const savedAttendance = createdAttendance?.attendance || {
+                    ...createdAttendance,
+                    employee_id: employee.id,
+                    employee_name: employee.full_name,
+                    date: today,
+                    check_in: currentTime,
+                    status,
+                    interventions: []
+                };
+                setCurrentAttendance(savedAttendance);
+                queryClient.invalidateQueries({ queryKey: ['attendances'] });
+                queryClient.invalidateQueries({ queryKey: ['todayAttendances'] });
+                queryClient.invalidateQueries({ queryKey: ['allAttendances'] });
+                queryClient.invalidateQueries({ queryKey: ['allHistory'] });
+                queryClient.invalidateQueries({ queryKey: ['myAttendances', employee.id] });
 
                 setSuccessMessage(`✅ Bienvenue ${employee.full_name}!\nArrivée: ${currentTime}`);
                 setShowSuccess(true);
