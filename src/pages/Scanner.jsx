@@ -146,6 +146,38 @@ export default function Scanner() {
         return () => window.clearInterval(reminderTimer);
     }, [employeeProfile, currentAttendance]);
 
+    useEffect(() => {
+        if (!employeeProfile || employeeProfile.role === 'admin' || employeeProfile.role === 'super_admin') return undefined;
+
+        const checkPauseReminder = () => {
+            const pauseStart = currentAttendance?.lunch_start;
+            if (!pauseStart || currentAttendance?.lunch_end || !currentAttendance?.id) return;
+
+            const [startHour, startMinute] = pauseStart.split(':').map(Number);
+            if (!Number.isInteger(startHour) || !Number.isInteger(startMinute)) return;
+
+            const elapsedMinutes = (Date.now() - new Date().setHours(startHour, startMinute, 0, 0)) / 60000;
+            const reminderKey = `presencex.pause-reminder.${currentAttendance.id}`;
+            if (elapsedMinutes < 55 || elapsedMinutes >= 60 || localStorage.getItem(reminderKey)) return;
+
+            localStorage.setItem(reminderKey, 'sent');
+            toast.warning('Fin de pause dans 5 minutes', {
+                description: 'Votre pause d’une heure se termine bientôt. Pensez à scanner votre retour.',
+                duration: 10000,
+            });
+            if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+                new Notification('Fin de pause dans 5 minutes', {
+                    body: 'Pensez à scanner votre retour de pause.',
+                    icon: '/assets/msa-inter-logo.png',
+                });
+            }
+        };
+
+        checkPauseReminder();
+        const pauseTimer = window.setInterval(checkPauseReminder, 30000);
+        return () => window.clearInterval(pauseTimer);
+    }, [employeeProfile, currentAttendance]);
+
     const arrivalTime = currentAttendance?.check_in || '--:--';
     const departureTime = currentAttendance?.check_out || '--:--';
     const workedHours = currentAttendance?.hours_worked ? `${Number(currentAttendance.hours_worked).toFixed(1)}h` : '0h';
@@ -349,6 +381,13 @@ export default function Scanner() {
                 actionKey: 'lunch_start',
                 data: { lunch_start: currentTime }
             });
+            if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+                try {
+                    await Notification.requestPermission();
+                } catch {
+                    // In-app toast reminders remain available when browser notifications are denied.
+                }
+            }
             setCurrentAttendance((previous) => ({ ...previous, lunch_start: currentTime }));
             setSuccessMessage(`☕ Bonne pause déjeuner!\nDébut: ${currentTime}`);
             setShowSuccess(true);

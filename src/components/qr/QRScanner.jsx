@@ -22,12 +22,46 @@ export default function QRScanner({ onScan, onError }) {
                 throw new Error('CAMERA_UNSUPPORTED');
             }
 
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
-                audio: false
-            });
+            const constraintsList = [
+                {
+                    video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+                    audio: false,
+                },
+                {
+                    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+                    audio: false,
+                },
+                {
+                    video: true,
+                    audio: false,
+                },
+            ];
+
+            let lastError = null;
+            let stream = null;
+
+            for (const constraints of constraintsList) {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia(constraints);
+                    break;
+                } catch (error) {
+                    lastError = error;
+                }
+            }
+
+            if (!stream) {
+                throw lastError || new Error('CAMERA_UNSUPPORTED');
+            }
 
             streamRef.current = stream;
+            const videoTrack = stream.getVideoTracks()[0];
+            if (videoTrack?.applyConstraints) {
+                try {
+                    await videoTrack.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+                } catch {
+                    // Focus controls are not exposed by every iPhone Safari version.
+                }
+            }
             hasScannedRef.current = false;
             decodingRef.current = false;
             if ('BarcodeDetector' in window) {
@@ -58,11 +92,24 @@ export default function QRScanner({ onScan, onError }) {
         }
         if (animationRef.current) {
             cancelAnimationFrame(animationRef.current);
+            clearTimeout(animationRef.current);
             animationRef.current = null;
         }
         decodingRef.current = false;
         barcodeDetectorRef.current = null;
         setIsScanning(false);
+    };
+
+    const scheduleNextScan = () => {
+        if (hasScannedRef.current) return;
+        if (animationRef.current) {
+            cancelAnimationFrame(animationRef.current);
+            clearTimeout(animationRef.current);
+        }
+        animationRef.current = setTimeout(() => {
+            animationRef.current = null;
+            scanQRCode();
+        }, 150);
     };
 
     const scanQRCode = async () => {
@@ -71,22 +118,28 @@ export default function QRScanner({ onScan, onError }) {
         const video = videoRef.current;
         const canvas = canvasRef.current;
         if (video.readyState < 2 || !video.videoWidth || !video.videoHeight) {
-            animationRef.current = requestAnimationFrame(scanQRCode);
+            scheduleNextScan();
             return;
         }
         if (decodingRef.current) {
-            animationRef.current = requestAnimationFrame(scanQRCode);
+            scheduleNextScan();
             return;
         }
 
         decodingRef.current = true;
         try {
             // A smaller, stable frame is much faster and more reliable on iPhone Safari.
-            const maxWidth = 720;
+            const maxWidth = 960;
             const scale = Math.min(1, maxWidth / video.videoWidth);
-            canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
-            canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
+            const width = Math.max(1, Math.round(video.videoWidth * scale));
+            const height = Math.max(1, Math.round(video.videoHeight * scale));
+            canvas.width = width;
+            canvas.height = height;
             const context = canvas.getContext('2d', { willReadFrequently: true });
+            if (!context) {
+                scheduleNextScan();
+                return;
+            }
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
             if (barcodeDetectorRef.current) {
@@ -118,7 +171,7 @@ export default function QRScanner({ onScan, onError }) {
             decodingRef.current = false;
         }
 
-        animationRef.current = requestAnimationFrame(scanQRCode);
+        scheduleNextScan();
     };
 
     useEffect(() => {
@@ -148,7 +201,7 @@ export default function QRScanner({ onScan, onError }) {
             startVideo();
         } else {
             video.onloadedmetadata = startVideo;
-        video.oncanplay = startVideo;
+            video.oncanplay = startVideo;
         }
 
         return () => {
