@@ -114,6 +114,38 @@ export default function Scanner() {
         };
     }, [queryClient]);
 
+    useEffect(() => {
+        if (!employeeProfile || employeeProfile.role === 'admin' || employeeProfile.role === 'super_admin') return undefined;
+
+        const reminderKey = `presencex.morning-reminder.${employeeProfile.id}.${format(new Date(), 'yyyy-MM-dd')}`;
+        const checkMorningReminder = () => {
+            const now = new Date();
+            const minutes = now.getHours() * 60 + now.getMinutes();
+            const reminderStart = 7 * 60 + 55;
+            const reminderEnd = 8 * 60 + 15;
+            if (minutes < reminderStart || minutes > reminderEnd || localStorage.getItem(reminderKey)) return;
+
+            const hasCheckedIn = currentAttendance?.date === format(now, 'yyyy-MM-dd');
+            if (hasCheckedIn) return;
+
+            localStorage.setItem(reminderKey, 'sent');
+            toast.warning('Rappel de pointage', {
+                description: 'Vous n’avez pas encore scanné votre arrivée. Pensez à faire votre pointage.',
+                duration: 10000,
+            });
+            if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+                new Notification('Rappel de pointage', {
+                    body: 'Vous n’avez pas encore scanné votre arrivée.',
+                    icon: '/assets/msa-inter-logo.png',
+                });
+            }
+        };
+
+        checkMorningReminder();
+        const reminderTimer = window.setInterval(checkMorningReminder, 30000);
+        return () => window.clearInterval(reminderTimer);
+    }, [employeeProfile, currentAttendance]);
+
     const arrivalTime = currentAttendance?.check_in || '--:--';
     const departureTime = currentAttendance?.check_out || '--:--';
     const workedHours = currentAttendance?.hours_worked ? `${Number(currentAttendance.hours_worked).toFixed(1)}h` : '0h';

@@ -67,6 +67,10 @@ export default function History() {
         a.click();
     };
 
+    const totalHours = filteredAttendances.reduce((sum, attendance) => sum + (Number(attendance.hours_worked) || 0), 0);
+    const presentCount = filteredAttendances.filter((attendance) => attendance.status === 'present').length;
+    const lateCount = filteredAttendances.filter((attendance) => attendance.status === 'late').length;
+
     const exportToPDF = () => {
         const printWindow = window.open('', '', 'height=900,width=1200');
         if (!printWindow) return;
@@ -86,21 +90,39 @@ export default function History() {
             <html><head><title>Historique de présence</title>
             <style>
                 @page { size: A4 landscape; margin: 12mm; }
-                body { font-family: Arial, sans-serif; color: #111827; }
-                h1 { text-align: center; margin: 0 0 8px; }
-                p { text-align: center; color: #6b7280; margin: 0 0 20px; }
-                table { width: 100%; border-collapse: collapse; font-size: 12px; }
-                th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
-                th { background: #eff6ff; font-weight: 700; }
+                body { font-family: Arial, sans-serif; color: #111827; margin: 0; }
+                .page { padding: 12mm; }
+                .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #dbeafe; padding-bottom: 12px; margin-bottom: 18px; }
+                .logo { width: 125px; }
+                .brand { color: #1d4ed8; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: 12px; }
+                h1 { text-align: center; font-size: 27px; margin: 12px 0 8px; }
+                p { text-align: center; color: #6b7280; margin: 0 0 8px; }
+                .period { text-align: center; font-size: 14px; color: #374151; margin-bottom: 18px; }
+                .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+                .summary-box { border: 1px solid #d1d5db; background: #f8fafc; border-radius: 8px; padding: 12px; text-align: center; }
+                .summary-box strong { display: block; color: #6b7280; font-size: 11px; text-transform: uppercase; margin-bottom: 5px; }
+                .summary-box span { font-size: 20px; font-weight: 800; }
+                table { width: 100%; border-collapse: collapse; font-size: 11px; }
+                th, td { border: 1px solid #cbd5e1; padding: 8px 6px; text-align: left; vertical-align: top; }
+                th { background: #eff6ff; font-weight: 700; text-transform: uppercase; font-size: 10px; }
             </style></head>
             <body>
-                <h1>Historique de Présence</h1>
-                <p>Date d'impression : ${format(new Date(), 'dd MMMM yyyy', { locale: fr })}</p>
-                <table><thead><tr>
-                    <th>Date</th><th>Employé</th><th>Arrivée</th><th>Départ</th><th>Heures</th><th>Statut</th>
-                </tr></thead><tbody>
-                    ${rows || '<tr><td colspan="6">Aucun enregistrement</td></tr>'}
-                </tbody></table>
+                <div class="page">
+                    <div class="header"><img class="logo" src="/assets/msa-inter-logo.png" alt="Logo MSA" /><div class="brand">Presence Management</div></div>
+                    <h1>Historique de Présence</h1>
+                    <p>Date d'impression : ${format(new Date(), 'dd MMMM yyyy', { locale: fr })}</p>
+                    <div class="period">${dateFilter ? `Journée du ${format(new Date(dateFilter), 'dd MMMM yyyy', { locale: fr })}` : 'Toutes les dates filtrées'}</div>
+                    <div class="summary">
+                        <div class="summary-box"><strong>Présences</strong><span>${presentCount}</span></div>
+                        <div class="summary-box"><strong>Retards</strong><span>${lateCount}</span></div>
+                        <div class="summary-box"><strong>Heures totales</strong><span>${totalHours.toFixed(1)} h</span></div>
+                    </div>
+                    <table><thead><tr>
+                        <th>Date</th><th>Employé</th><th>Arrivée</th><th>Départ</th><th>Heures</th><th>Statut</th>
+                    </tr></thead><tbody>
+                        ${rows || '<tr><td colspan="6">Aucun enregistrement</td></tr>'}
+                    </tbody></table>
+                </div>
             </body></html>
         `);
         printWindow.document.close();
