@@ -170,11 +170,11 @@ export default function Scanner() {
             const currentTime = format(now, 'HH:mm');
             const currentMinutes = now.getHours() * 60 + now.getMinutes();
             const openingMinutes = 7 * 60;
-            const closingMinutes = 21 * 60;
+            const closingMinutes = 21 * 60 + 30;
 
             if (currentMinutes < openingMinutes || currentMinutes > closingMinutes) {
                 toast.error('Pointage non disponible', {
-                    description: 'Le pointage est disponible entre 07:00 et 21:00.'
+                    description: 'Le pointage est disponible entre 07:00 et 21:30.'
                 });
                 setIsProcessing(false);
                 return;
