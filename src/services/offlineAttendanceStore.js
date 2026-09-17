@@ -47,6 +47,11 @@ export const clearOfflineSession = () => {
 
 export const getOfflineAttendanceQueue = () => readJson(QUEUE_KEY, []);
 
+export const hasPendingOfflineAttendance = (employeeId, date) =>
+    getOfflineAttendanceQueue().some(
+        (item) => item.employee_id === employeeId && item.date === date && item.status !== 'failed',
+    );
+
 export const getOfflineAttendanceForToday = (employeeId, date) =>
     getOfflineAttendanceQueue().find(
         (item) => item.employee_id === employeeId && item.date === date && item.status !== 'failed',
@@ -79,19 +84,24 @@ export const flushOfflineAttendanceQueue = async (syncAttendance) => {
 
     for (const item of queue) {
         try {
-            await syncAttendance({ action: item.action, payload: {
-                employee_id: item.employee_id,
-                employee_name: item.employee_name,
-                date: item.date,
-                check_in: item.check_in,
-                status: item.attendance_status,
-                interventions: item.interventions || [],
-                offline: true,
-            }});
+            await syncAttendance({
+                action: item.action || 'create-attendance',
+                payload: {
+                    employee_id: item.employee_id,
+                    employee_name: item.employee_name,
+                    date: item.date,
+                    check_in: item.check_in,
+                    status: item.attendance_status || item.status || 'present',
+                    interventions: item.interventions || [],
+                    offline: true,
+                }
+            });
             synced += 1;
         } catch (error) {
             const message = error?.message || '';
-            if (message.toLowerCase().includes('already exists')) {
+            const lowerMessage = message.toLowerCase();
+
+            if (lowerMessage.includes('already exists') || lowerMessage.includes('attendance already exists') || lowerMessage.includes('duplicate')) {
                 synced += 1;
             } else {
                 remaining.push({ ...item, status: 'pending', last_error: message });
