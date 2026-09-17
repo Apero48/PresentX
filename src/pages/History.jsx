@@ -67,7 +67,31 @@ export default function History() {
         a.click();
     };
 
-    const totalHours = filteredAttendances.reduce((sum, attendance) => sum + (Number(attendance.hours_worked) || 0), 0);
+    const getPdfAttendance = (attendance) => {
+        const today = format(new Date(), 'yyyy-MM-dd');
+        const isPastDay = attendance.date < today;
+        const checkInMinutes = String(attendance.check_in || '').split(':').map(Number);
+        const checkIn = checkInMinutes[0] * 60 + checkInMinutes[1];
+        const automaticCloseAllowed = isPastDay || new Date().getHours() * 60 + new Date().getMinutes() >= 21 * 60 + 30;
+        const lunchStart = String(attendance.lunch_start || '').split(':').map(Number);
+        const lunchEnd = String(attendance.lunch_end || '').split(':').map(Number);
+        const lunchMinutes = lunchStart.length === 2 && lunchEnd.length === 2
+            ? (lunchEnd[0] * 60 + lunchEnd[1]) - (lunchStart[0] * 60 + lunchStart[1])
+            : 0;
+        const fallbackHours = Number.isFinite(checkIn) && automaticCloseAllowed
+            ? Math.max(0, (19 * 60 - checkIn - lunchMinutes) / 60)
+            : null;
+        return {
+            ...attendance,
+            check_out: attendance.check_out || (automaticCloseAllowed ? '19:00' : null),
+            hours_worked: Number.isFinite(Number(attendance.hours_worked))
+                ? Number(attendance.hours_worked)
+                : fallbackHours,
+        };
+    };
+
+    const pdfAttendances = filteredAttendances.map(getPdfAttendance);
+    const totalHours = pdfAttendances.reduce((sum, attendance) => sum + (Number(attendance.hours_worked) || 0), 0);
     const presentCount = filteredAttendances.filter((attendance) => attendance.status === 'present').length;
     const lateCount = filteredAttendances.filter((attendance) => attendance.status === 'late').length;
 
@@ -75,7 +99,7 @@ export default function History() {
         const printWindow = window.open('', '', 'height=900,width=1200');
         if (!printWindow) return;
 
-        const rows = filteredAttendances.map((attendance) => `
+        const rows = pdfAttendances.map((attendance) => `
             <tr>
                 <td>${attendance.date || '-'}</td>
                 <td><strong>${attendance.employee_name || '-'}</strong></td>
@@ -114,7 +138,6 @@ export default function History() {
                 <div class="page">
                     <div class="header"><img class="logo" src="/assets/msa-inter-logo.png" alt="Logo MSA" /><div class="brand">Presence Management</div></div>
                     <h1>Historique de Présence</h1>
-                    <p>Date d'impression : ${format(new Date(), 'dd MMMM yyyy', { locale: fr })}</p>
                     <div class="period">${dateFilter ? `Journée du ${format(new Date(dateFilter), 'dd MMMM yyyy', { locale: fr })}` : 'Toutes les dates filtrées'}</div>
                     <div class="summary">
                         <div class="summary-box"><strong>Présences</strong><span>${presentCount}</span></div>

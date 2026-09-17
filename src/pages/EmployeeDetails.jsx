@@ -158,12 +158,33 @@ export default function EmployeeDetails() {
             return;
         }
 
-        const department = employee?.department || 'Non défini';
-        const totalHoursValue = filteredAttendances.reduce((sum, att) => sum + (Number(att.hours_worked) || 0), 0);
+        const getPdfAttendance = (attendance) => {
+            const today = format(new Date(), 'yyyy-MM-dd');
+            const isPastDay = attendance.date < today;
+            const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
+            const automaticCloseAllowed = isPastDay || nowMinutes >= 21 * 60 + 30;
+            const [checkInHour, checkInMinute] = String(attendance.check_in || '').split(':').map(Number);
+            const [lunchStartHour, lunchStartMinute] = String(attendance.lunch_start || '').split(':').map(Number);
+            const [lunchEndHour, lunchEndMinute] = String(attendance.lunch_end || '').split(':').map(Number);
+            const checkInMinutes = checkInHour * 60 + checkInMinute;
+            const lunchMinutes = Number.isFinite(lunchStartHour) && Number.isFinite(lunchEndHour)
+                ? (lunchEndHour * 60 + lunchEndMinute) - (lunchStartHour * 60 + lunchStartMinute)
+                : 0;
+            const fallbackHours = Number.isFinite(checkInMinutes) && automaticCloseAllowed
+                ? Math.max(0, (19 * 60 - checkInMinutes - lunchMinutes) / 60)
+                : null;
+            return {
+                ...attendance,
+                check_out: attendance.check_out || (automaticCloseAllowed ? '19:00' : null),
+                hours_worked: Number.isFinite(Number(attendance.hours_worked)) ? Number(attendance.hours_worked) : fallbackHours,
+            };
+        };
+        const pdfAttendances = filteredAttendances.map(getPdfAttendance);
+        const totalHoursValue = pdfAttendances.reduce((sum, att) => sum + (Number(att.hours_worked) || 0), 0);
         const startLabel = startDate ? format(new Date(startDate), 'dd/MM/yyyy') : '—';
         const endLabel = endDate ? format(new Date(endDate), 'dd/MM/yyyy') : 'Aujourd\'hui';
 
-        const summaryRows = filteredAttendances.map((attendance) => {
+        const summaryRows = pdfAttendances.map((attendance) => {
             const hours = Number(attendance.hours_worked);
             const statusLabel = attendance.status === 'late' ? 'Retard' : attendance.status === 'present' ? 'Présent' : attendance.status === 'absent' ? 'Absent' : 'Partiel';
             const interventions = Array.isArray(attendance.interventions) && attendance.interventions.length > 0
@@ -326,8 +347,6 @@ export default function EmployeeDetails() {
 
             <div class="title">Historique de Présence</div>
             <div class="employee-name">${employee?.full_name || 'Employé'}</div>
-            <div class="subtitle">Département: ${department}</div>
-            <div class="meta">Date d'impression: ${format(new Date(), 'dd MMMM yyyy', { locale: fr })}</div>
             <div class="period">Période: ${startLabel} - ${endLabel}</div>
 
             <div class="summary">
