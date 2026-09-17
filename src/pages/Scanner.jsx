@@ -18,6 +18,7 @@ import {
     getCachedOfflineEmployee,
     getOfflineAttendanceForToday,
     enqueueOfflineAttendance,
+    enqueueOfflineAttendanceUpdate,
     flushOfflineAttendanceQueue,
     hasPendingOfflineAttendance,
 } from '@/services/offlineAttendanceStore';
@@ -376,11 +377,12 @@ export default function Scanner() {
             // Allow actions (lunch, intervention, checkout) at any time once checked in
 
         if (actionKey === 'lunch_start') {
-            await updateAttendanceMutation.mutateAsync({
-                id: currentAttendance.id,
-                actionKey: 'lunch_start',
-                data: { lunch_start: currentTime }
-            });
+            const updateData = { lunch_start: currentTime };
+            if (!navigator.onLine || String(currentAttendance.id).startsWith('offline-')) {
+                enqueueOfflineAttendanceUpdate({ employeeId: currentEmployee.id, date: format(new Date(), 'yyyy-MM-dd'), attendanceId: currentAttendance.id, actionKey: 'lunch_start', data: updateData });
+            } else {
+                await updateAttendanceMutation.mutateAsync({ id: currentAttendance.id, actionKey: 'lunch_start', data: updateData });
+            }
             if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
                 try {
                     await Notification.requestPermission();
@@ -394,11 +396,12 @@ export default function Scanner() {
             toast.success(`☕ Pause déjeuner - ${currentTime}`);
             setTimeout(() => setShowSuccess(false), 3000);
         } else if (actionKey === 'lunch_end') {
-            await updateAttendanceMutation.mutateAsync({
-                id: currentAttendance.id,
-                actionKey: 'lunch_end',
-                data: { lunch_end: currentTime }
-            });
+            const updateData = { lunch_end: currentTime };
+            if (!navigator.onLine || String(currentAttendance.id).startsWith('offline-')) {
+                enqueueOfflineAttendanceUpdate({ employeeId: currentEmployee.id, date: format(new Date(), 'yyyy-MM-dd'), attendanceId: currentAttendance.id, actionKey: 'lunch_end', data: updateData });
+            } else {
+                await updateAttendanceMutation.mutateAsync({ id: currentAttendance.id, actionKey: 'lunch_end', data: updateData });
+            }
             setCurrentAttendance((previous) => ({ ...previous, lunch_end: currentTime }));
             setSuccessMessage(`🍽️ Bon retour!\nReprise: ${currentTime}`);
             setShowSuccess(true);
@@ -414,11 +417,12 @@ export default function Scanner() {
             const checkInTime = currentAttendance.check_in;
             const hoursWorked = calculateHoursWorked(checkInTime, currentTime, currentAttendance.lunch_start, currentAttendance.lunch_end);
 
-            await updateAttendanceMutation.mutateAsync({
-                id: currentAttendance.id,
-                actionKey: 'check_out',
-                data: { check_out: currentTime, hours_worked: hoursWorked.toFixed(2) }
-            });
+            const updateData = { check_out: currentTime, hours_worked: hoursWorked.toFixed(2) };
+            if (!navigator.onLine || String(currentAttendance.id).startsWith('offline-')) {
+                enqueueOfflineAttendanceUpdate({ employeeId: currentEmployee.id, date: format(new Date(), 'yyyy-MM-dd'), attendanceId: currentAttendance.id, actionKey: 'check_out', data: updateData });
+            } else {
+                await updateAttendanceMutation.mutateAsync({ id: currentAttendance.id, actionKey: 'check_out', data: updateData });
+            }
 
             setSuccessMessage(`👋 Bonne soirée ${currentEmployee.full_name}!\nDépart: ${currentTime}\nHeures: ${hoursWorked.toFixed(1)}h`);
             setShowSuccess(true);
@@ -442,11 +446,12 @@ export default function Scanner() {
                 location: data.location
             });
 
-            await updateAttendanceMutation.mutateAsync({
-                id: currentAttendance.id,
-                actionKey: 'interventions',
-                data: { interventions }
-            });
+            const updateData = { interventions };
+            if (!navigator.onLine || String(currentAttendance.id).startsWith('offline-')) {
+                enqueueOfflineAttendanceUpdate({ employeeId: currentEmployee.id, date: format(new Date(), 'yyyy-MM-dd'), attendanceId: currentAttendance.id, actionKey: 'interventions', data: updateData });
+            } else {
+                await updateAttendanceMutation.mutateAsync({ id: currentAttendance.id, actionKey: 'interventions', data: updateData });
+            }
             setCurrentAttendance((previous) => ({ ...previous, interventions: [...interventions] }));
 
             setSuccessMessage(`🚗 Intervention enregistrée\nDépart: ${currentTime}\n${data.location}`);
@@ -461,11 +466,12 @@ export default function Scanner() {
                 lastIntervention.return_time = currentTime;
             }
 
-            await updateAttendanceMutation.mutateAsync({
-                id: currentAttendance.id,
-                actionKey: 'interventions',
-                data: { interventions }
-            });
+            const updateData = { interventions };
+            if (!navigator.onLine || String(currentAttendance.id).startsWith('offline-')) {
+                enqueueOfflineAttendanceUpdate({ employeeId: currentEmployee.id, date: format(new Date(), 'yyyy-MM-dd'), attendanceId: currentAttendance.id, actionKey: 'interventions', data: updateData });
+            } else {
+                await updateAttendanceMutation.mutateAsync({ id: currentAttendance.id, actionKey: 'interventions', data: updateData });
+            }
             setCurrentAttendance((previous) => ({ ...previous, interventions: [...interventions] }));
 
             setSuccessMessage(`✅ Retour d'intervention\nRetour: ${currentTime}`);

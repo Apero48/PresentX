@@ -53,7 +53,46 @@ export const hasPendingOfflineAttendance = (employeeId, date) =>
     );
 
 export const getOfflineAttendanceForToday = (employeeId, date) =>
-    getOfflineAttendanceQueue().find(
+    getOfflineAttendanceQueue().filter(
+        (item) => item.employee_id === employeeId && item.date === date && item.status !== 'failed',
+    ).reduce((attendance, item) => {
+        if (item.action === 'create-attendance') {
+            return {
+                ...attendance,
+                ...item,
+                status: item.attendance_status || item.status || 'present',
+                interventions: item.interventions || [],
+            };
+        }
+        return {
+            ...attendance,
+            ...(item.data || {}),
+            ...(item.actionKey === 'check_out' ? { check_out: item.data?.check_out } : {}),
+        };
+    }, null);
+
+export const enqueueOfflineAttendanceUpdate = ({ employeeId, date, attendanceId, actionKey, data }) => {
+    const queue = getOfflineAttendanceQueue();
+    const item = {
+        id: `offline-action-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        action: 'update-attendance',
+        employee_id: employeeId,
+        date,
+        attendance_id: attendanceId,
+        actionKey,
+        data,
+        queued_at: new Date().toISOString(),
+        status: 'pending',
+    };
+    writeJson(QUEUE_KEY, [...queue, item]);
+    return item;
+};
+
+/*
+ * Keep the original lookup contract for callers that only need to know whether
+ * an offline attendance exists, while applying queued updates to its local view.
+ */
+export const getOfflineAttendanceBaseForToday = (employeeId, date) => getOfflineAttendanceQueue().find(
         (item) => item.employee_id === employeeId && item.date === date && item.status !== 'failed',
     ) || null;
 
@@ -80,13 +119,18 @@ export const flushOfflineAttendanceQueue = async (syncAttendance) => {
 
     const queue = getOfflineAttendanceQueue();
     const remaining = [];
+    const syncedAttendanceIds = new Map();
     let synced = 0;
 
     for (const item of queue) {
         try {
-            await syncAttendance({
-                action: item.action || 'create-attendance',
-                payload: {
+            const payload = item.action === 'update-attendance'
+                ? {
+                    id: syncedAttendanceIds.get(item.attendance_id) || item.attendance_id,
+                    actionKey: item.actionKey,
+                    data: item.data || {},
+                }
+                : {
                     employee_id: item.employee_id,
                     employee_name: item.employee_name,
                     date: item.date,
@@ -94,8 +138,11 @@ export const flushOfflineAttendanceQueue = async (syncAttendance) => {
                     status: item.attendance_status || item.status || 'present',
                     interventions: item.interventions || [],
                     offline: true,
-                }
-            });
+                };
+            const result = await syncAttendance({ action: item.action || 'create-attendance', payload });
+            if (item.action === 'create-attendance' && result?.attendance?.id) {
+                syncedAttendanceIds.set(item.id, result.attendance.id);
+            }
             synced += 1;
         } catch (error) {
             const message = error?.message || '';
