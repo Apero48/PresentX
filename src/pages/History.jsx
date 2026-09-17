@@ -67,6 +67,46 @@ export default function History() {
         a.click();
     };
 
+    const exportToPDF = () => {
+        const printWindow = window.open('', '', 'height=900,width=1200');
+        if (!printWindow) return;
+
+        const rows = filteredAttendances.map((attendance) => `
+            <tr>
+                <td>${attendance.date || '-'}</td>
+                <td>${attendance.employee_name || '-'}</td>
+                <td>${attendance.check_in || '-'}</td>
+                <td>${attendance.check_out || '-'}</td>
+                <td>${Number.isFinite(Number(attendance.hours_worked)) ? `${Number(attendance.hours_worked).toFixed(2)} h` : '-'}</td>
+                <td>${getStatusBadge(attendance.status).label}</td>
+            </tr>
+        `).join('');
+
+        printWindow.document.write(`
+            <html><head><title>Historique de présence</title>
+            <style>
+                @page { size: A4 landscape; margin: 12mm; }
+                body { font-family: Arial, sans-serif; color: #111827; }
+                h1 { text-align: center; margin: 0 0 8px; }
+                p { text-align: center; color: #6b7280; margin: 0 0 20px; }
+                table { width: 100%; border-collapse: collapse; font-size: 12px; }
+                th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
+                th { background: #eff6ff; font-weight: 700; }
+            </style></head>
+            <body>
+                <h1>Historique de Présence</h1>
+                <p>Date d'impression : ${format(new Date(), 'dd MMMM yyyy', { locale: fr })}</p>
+                <table><thead><tr>
+                    <th>Date</th><th>Employé</th><th>Arrivée</th><th>Départ</th><th>Heures</th><th>Statut</th>
+                </tr></thead><tbody>
+                    ${rows || '<tr><td colspan="6">Aucun enregistrement</td></tr>'}
+                </tbody></table>
+            </body></html>
+        `);
+        printWindow.document.close();
+        printWindow.onload = () => { printWindow.print(); printWindow.close(); };
+    };
+
     return (
         <div className="min-h-screen msa-gradient-soft p-6">
             <div className="max-w-7xl mx-auto space-y-6">
@@ -82,6 +122,10 @@ export default function History() {
                     >
                         <Download className="w-4 h-4 mr-2" />
                         Exporter CSV
+                    </Button>
+                    <Button onClick={exportToPDF} className="msa-gradient">
+                        <Download className="w-4 h-4 mr-2" />
+                        Exporter PDF
                     </Button>
                 </div>
 
