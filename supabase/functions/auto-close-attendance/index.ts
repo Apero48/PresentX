@@ -16,6 +16,17 @@ Deno.serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   const timeZone = Deno.env.get('APP_TIMEZONE') || 'Africa/Algiers';
+  const nowParts = new Intl.DateTimeFormat('en-GB', {
+    timeZone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(new Date());
+  const nowHour = Number(nowParts.find((part) => part.type === 'hour')?.value || 0);
+  const nowMinute = Number(nowParts.find((part) => part.type === 'minute')?.value || 0);
+  if (nowHour * 60 + nowMinute < 21 * 60 + 30) {
+    return json({ success: true, closed: 0, skipped: true, message: 'Automatic closure starts at 21:30.' });
+  }
   const date = new Intl.DateTimeFormat('en-CA', { timeZone }).format(new Date());
 
   try {
