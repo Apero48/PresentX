@@ -24,12 +24,39 @@ Deno.serve(async (req) => {
   }).formatToParts(new Date());
   const nowHour = Number(nowParts.find((part) => part.type === 'hour')?.value || 0);
   const nowMinute = Number(nowParts.find((part) => part.type === 'minute')?.value || 0);
-  if (nowHour * 60 + nowMinute < 21 * 60 + 30) {
-    return json({ success: true, closed: 0, skipped: true, message: 'Automatic closure starts at 21:30.' });
-  }
   const date = new Intl.DateTimeFormat('en-CA', { timeZone }).format(new Date());
+  const nowMinutes = nowHour * 60 + nowMinute;
 
   try {
+    const { data: openPauses, error: pauseSelectError } = await adminClient
+      .from('attendances')
+      .select('id, lunch_start')
+      .eq('date', date)
+      .not('lunch_start', 'is', null)
+      .is('lunch_end', null);
+    if (pauseSelectError) return json({ error: pauseSelectError.message }, 500);
+
+    let pausesClosed = 0;
+    for (const attendance of openPauses || []) {
+      const [startHour, startMinute] = String(attendance.lunch_start).split(':').map(Number);
+      const startMinutes = startHour * 60 + startMinute;
+      if (!Number.isInteger(startHour) || !Number.isInteger(startMinute) || nowMinutes < startMinutes + 80) continue;
+
+      const automaticReturnMinutes = startMinutes + 60;
+      const returnHour = String(Math.floor(automaticReturnMinutes / 60) % 24).padStart(2, '0');
+      const returnMinute = String(automaticReturnMinutes % 60).padStart(2, '0');
+      const { error: pauseUpdateError } = await adminClient
+        .from('attendances')
+        .update({ lunch_end: `${returnHour}:${returnMinute}` })
+        .eq('id', attendance.id)
+        .is('lunch_end', null);
+      if (!pauseUpdateError) pausesClosed += 1;
+    }
+
+    if (nowMinutes < 21 * 60 + 30) {
+      return json({ success: true, date, pauses_closed: pausesClosed, closed: 0, skipped: true });
+    }
+
     const { data: openAttendances, error: selectError } = await adminClient
       .from('attendances')
       .select('id, check_in, lunch_start, lunch_end')
@@ -59,7 +86,7 @@ Deno.serve(async (req) => {
       if (!updateError) closed += 1;
     }
 
-    return json({ success: true, date, closed, automatic_departure: '19:00' });
+    return json({ success: true, date, pauses_closed: pausesClosed, closed, automatic_departure: '19:00' });
   } catch (error) {
     return json({ error: error instanceof Error ? error.message : 'Unexpected error' }, 500);
   }

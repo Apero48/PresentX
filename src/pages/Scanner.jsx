@@ -123,7 +123,7 @@ export default function Scanner() {
             const now = new Date();
             const minutes = now.getHours() * 60 + now.getMinutes();
             const reminderStart = 7 * 60 + 55;
-            const reminderEnd = 8 * 60 + 15;
+            const reminderEnd = 8 * 60 + 5;
             if (minutes < reminderStart || minutes > reminderEnd || localStorage.getItem(reminderKey)) return;
 
             const hasCheckedIn = currentAttendance?.date === format(now, 'yyyy-MM-dd');
@@ -155,23 +155,6 @@ export default function Scanner() {
             if (!currentAttendance?.id) return;
 
             const now = new Date();
-            const nowMinutes = now.getHours() * 60 + now.getMinutes();
-            const pauseStartReminderKey = `presencex.pause-start-reminder.${currentAttendance.id}`;
-            if (!pauseStart && nowMinutes >= 12 * 60 && nowMinutes <= 12 * 60 + 15 && !localStorage.getItem(pauseStartReminderKey)) {
-                localStorage.setItem(pauseStartReminderKey, 'sent');
-                toast.warning('Rappel de pause', {
-                    description: 'Pensez à scanner le début de votre pause déjeuner.',
-                    duration: 10000,
-                });
-                if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-                    new Notification('Rappel de pause', {
-                        body: 'Pensez à scanner le début de votre pause déjeuner.',
-                        icon: '/assets/msa-inter-logo.png',
-                    });
-                }
-                return;
-            }
-
             if (!pauseStart || currentAttendance?.lunch_end) return;
 
             const [startHour, startMinute] = pauseStart.split(':').map(Number);

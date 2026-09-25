@@ -9,7 +9,7 @@ WHERE EXISTS (
 
 SELECT cron.schedule(
   'presencex-auto-close-attendance',
-  '30 20 * * *',
+  '*/5 * * * *',
   $$
     SELECT net.http_post(
       url := 'https://uhxqgrhdmxfkftdquaht.supabase.co/functions/v1/auto-close-attendance',
