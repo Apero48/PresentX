@@ -31,6 +31,54 @@ const getRoleFromUser = (user, employee) => {
     return 'employee'
 }
 
+const filterAdminEmployees = (employees = []) =>
+    (employees || []).filter((employee) => {
+        const role = String(
+            employee?.role ||
+            employee?.user_role ||
+            employee?.user_metadata?.role ||
+            employee?.app_metadata?.role ||
+            ''
+        ).toLowerCase();
+
+        const email = String(employee?.email || '').toLowerCase();
+
+        if (employee?.is_admin === true || employee?.isAdmin === true) {
+            return false;
+        }
+
+        return role !== 'admin' && role !== 'super_admin' && email !== 'admin@presencex.com';
+    });
+
+const normalizeAttendanceRecords = (attendances = []) => {
+    const now = new Date();
+    const today = now.toISOString().slice(0, 10);
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    const automaticCloseAllowed = nowMinutes >= 21 * 60 + 30;
+
+    return (attendances || []).map((attendance) => {
+        if (attendance.check_out || (attendance.date === today && !automaticCloseAllowed)) return attendance;
+
+        const [checkInHour, checkInMinute] = String(attendance.check_in || '').split(':').map(Number);
+        const checkInMinutes = checkInHour * 60 + checkInMinute;
+        const [lunchStartHour, lunchStartMinute] = String(attendance.lunch_start || '').split(':').map(Number);
+        const [lunchEndHour, lunchEndMinute] = String(attendance.lunch_end || '').split(':').map(Number);
+        const lunchMinutes = Number.isFinite(lunchStartHour) && Number.isFinite(lunchEndHour)
+            ? (lunchEndHour * 60 + lunchEndMinute) - (lunchStartHour * 60 + lunchStartMinute)
+            : 0;
+        const hoursWorked = Number.isFinite(checkInMinutes)
+            ? Math.max(0, (19 * 60 - checkInMinutes - lunchMinutes) / 60)
+            : null;
+
+        return {
+            ...attendance,
+            check_out: '19:00',
+            hours_worked: Number.isFinite(Number(attendance.hours_worked)) ? attendance.hours_worked : hoursWorked,
+            automatic_departure: true,
+        };
+    });
+};
+
 class SupabaseClient {
     // Auth methods
     auth = {
@@ -47,16 +95,17 @@ class SupabaseClient {
                 .from('employees')
                 .select('*')
                 .eq('user_id', user.id)
-                .single()
+                .maybeSingle()
 
-            const cachedEmployee = employee || getCachedOfflineEmployee()
+            const normalizedEmployee = employee && !filterAdminEmployees([employee]).length ? null : employee;
+            const cachedEmployee = normalizedEmployee || getCachedOfflineEmployee()
             const role = getRoleFromUser(user, cachedEmployee)
             const sessionUser = {
                 id: user.id,
                 email: user.email,
                 full_name: cachedEmployee?.full_name || user.email?.split('@')[0],
                 role,
-                employee_id: cachedEmployee?.id,
+                employee_id: role === 'admin' ? null : cachedEmployee?.id,
                 department: cachedEmployee?.department,
                 position: cachedEmployee?.position
             }
@@ -78,18 +127,20 @@ class SupabaseClient {
                 .from('employees')
                 .select('*')
                 .eq('user_id', data.user.id)
-                .single()
+                .maybeSingle()
 
-            const role = getRoleFromUser(data.user, employee)
+            const normalizedEmployee = employee && !filterAdminEmployees([employee]).length ? null : employee;
+
+            const role = getRoleFromUser(data.user, normalizedEmployee)
 
             return {
                 id: data.user.id,
                 email: data.user.email,
-                full_name: employee?.full_name || data.user.email?.split('@')[0],
+                full_name: normalizedEmployee?.full_name || data.user.email?.split('@')[0],
                 role,
-                employee_id: employee?.id,
-                department: employee?.department,
-                position: employee?.position
+                employee_id: role === 'admin' ? null : normalizedEmployee?.id,
+                department: normalizedEmployee?.department,
+                position: normalizedEmployee?.position
             }
         },
 
@@ -160,7 +211,7 @@ class SupabaseClient {
                     .limit(limit)
 
                 if (error) throw error
-                return data || []
+                return filterAdminEmployees(data || [])
             },
 
             filter: async (filters, orderBy = 'full_name', limit = 1000) => {
@@ -179,7 +230,7 @@ class SupabaseClient {
                     .limit(limit)
 
                 if (error) throw error
-                return data || []
+                return filterAdminEmployees(data || [])
             },
 
             create: async (employeeData) => {
@@ -217,7 +268,20 @@ class SupabaseClient {
         },
 
         Attendance: {
+            closeOpenAttendancesAutomatically: async () => {
+                const now = new Date();
+                if (now.getHours() * 60 + now.getMinutes() < 21 * 60 + 30) return;
+                try {
+                    await supabase.functions.invoke('auto-close-attendance', {
+                        body: { source: 'history-load' }
+                    });
+                } catch {
+                    // The UI fallback still displays 19:00 when the function is unavailable.
+                }
+            },
+
             list: async (orderBy = '-date', limit = 1000) => {
+                await this.entities.Attendance.closeOpenAttendancesAutomatically()
                 const order = orderBy.startsWith('-')
                     ? { column: orderBy.slice(1), ascending: false }
                     : { column: orderBy, ascending: true }
@@ -229,10 +293,11 @@ class SupabaseClient {
                     .limit(limit)
 
                 if (error) throw error
-                return data || []
+                return normalizeAttendanceRecords(data || [])
             },
 
             filter: async (filters, orderBy = '-date', limit = 1000) => {
+                await this.entities.Attendance.closeOpenAttendancesAutomatically()
                 const order = orderBy.startsWith('-')
                     ? { column: orderBy.slice(1), ascending: false }
                     : { column: orderBy, ascending: true }
@@ -248,7 +313,7 @@ class SupabaseClient {
                     .limit(limit)
 
                 if (error) throw error
-                return data || []
+                return normalizeAttendanceRecords(data || [])
             },
 
             create: async (attendanceData) => {
